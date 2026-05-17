@@ -9,11 +9,12 @@ import {
   Req,
   Res,
   UploadedFile,
+  UploadedFiles,
   UseGuards,
   UseInterceptors,
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
-import { FileInterceptor } from '@nestjs/platform-express';
+import { FileInterceptor, FilesInterceptor } from '@nestjs/platform-express';
 import {
   ApiBearerAuth,
   ApiBody,
@@ -87,13 +88,18 @@ export class AuthController {
   }
 
   @ApiOperation({ summary: 'Register a new Will Writer Agent' })
+@ApiConsumes('multipart/form-data')
+  @UseInterceptors(FilesInterceptor('files'))
   @ApiBody({
     type: RegisterAgentDto,
   })
   @Post('register/agent')
-  async registerAgent(@Body() dto: RegisterAgentDto) {
+  async registerAgent(
+    @Body() dto: RegisterAgentDto,
+    @UploadedFiles() files?: Express.Multer.File[],
+  ) {
     try {
-      return await this.authService.registerAgent(dto);
+      return await this.authService.registerAgent(dto, files);
     } catch (error) {
       throw new HttpException(
         error.message,

@@ -5,6 +5,15 @@ import { JwtService } from '@nestjs/jwt';
 import Redis from 'ioredis';
 
 //internal imports
+import {
+  ConflictException,
+  InternalServerErrorException,
+} from '@nestjs/common';
+import * as bcrypt from 'bcrypt';
+import {
+  RegisterAgentDto,
+  RegisterClientDto,
+} from 'src/modules/auth/dto/create-user.dto';
 import { StringHelper } from '../../common/helper/string.helper';
 import { TajulStorage } from '../../common/lib/Disk/TajulStorage';
 import { UcodeRepository } from '../../common/repository/ucode/ucode.repository';
@@ -13,9 +22,6 @@ import appConfig from '../../config/app.config';
 import { MailService } from '../../mail/mail.service';
 import { PrismaService } from '../../prisma/prisma.service';
 import { UpdateUserDto } from './dto/update-user.dto';
-import * as bcrypt from 'bcrypt';
-import { InternalServerErrorException, ConflictException } from '@nestjs/common';
-import { RegisterAgentDto, RegisterClientDto } from 'src/modules/auth/dto/create-user.dto';
 
 @Injectable()
 export class AuthService {
@@ -80,7 +86,7 @@ export class AuthService {
     }
   }
 
-/**
+  /**
    * Register Client Account
    */
   async registerClient(dto: RegisterClientDto) {
@@ -124,11 +130,19 @@ export class AuthService {
   /**
    * Register Will Writer Agent Account
    */
-  async registerAgent(dto: RegisterAgentDto) {
+  async registerAgent(dto: RegisterAgentDto, files?: Express.Multer.File[]) {
+    let fileName = '';
+    const folder = 'body_certificates';
+    const file = files && files.length > 0 ? files[0] : null;
+
     // 1. Check uniqueness
     await this.validateUniqueEmail(dto.email);
 
     try {
+      if (file) {
+        fileName = `${Date.now()}-${file.originalname.replace(/\s+/g, '_')}`;
+        await TajulStorage.put(`${folder}/${fileName}`, file.buffer);
+      }
       // 2. Hash Password
       const hashedPassword = await bcrypt.hash(dto.password, this.saltRounds);
 
@@ -144,14 +158,22 @@ export class AuthService {
           address: dto.address,
           password: hashedPassword,
           type: 'AGENT',
-          
+
           // Agent specific fields mapping
           certification_body: dto.certification_body,
           certification_number: dto.certification_number,
           years_of_experience: dto.years_of_experience,
           specialisation: dto.specialisation,
           professional_bio: dto.professional_bio || null,
-          attachment_id: dto.attachment_id, // Relation with Attachment table
+          certificate_url: fileName
+              ? {
+                  create: {
+                    name: file.originalname,
+                    type: file.mimetype,
+                    path: fileName,
+                  },
+                }
+              : undefined,
           preferred_working_hours: dto.preferred_working_hours,
           max_clients_per_month: dto.max_clients_per_month || 20,
         },
@@ -166,8 +188,9 @@ export class AuthService {
         data: agent,
       };
     } catch (error) {
-      throw new InternalServerErrorException('Failed to register agent account');
-
+      throw new InternalServerErrorException(
+        'Failed to register agent account',
+      );
     }
   }
 
@@ -184,7 +207,6 @@ export class AuthService {
       throw new ConflictException('Email address already exists');
     }
   }
-
 
   // done
   async login({

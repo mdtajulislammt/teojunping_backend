@@ -47,7 +47,7 @@ model User {
   address       String?
   avatar        String?
   type          UserType  @default(CLIENT)
-  attachment_id String?
+
 
   //client specific fields 
   service_plan      ServicePlan? @default(BASIC)
@@ -59,7 +59,7 @@ model User {
   years_of_experience     String?     @map("years_of_experience")
   specialisation          String?     @map("specialisation")
   professional_bio        String?     @map("professional_bio") @db.Text
-  certificate_url         Attachment? @relation("certificate", fields: [attachment_id], references: [id])
+  certificate_url         Attachment[] @relation("certificate")
   preferred_working_hours String?     @map("preferred_working_hours")
   max_clients_per_month   Int?        @default(20) @map("max_clients_per_month")
 
@@ -415,8 +415,8 @@ model Attachment {
   name       String?
   type       String?
   path       String?
-  request_id String
-  request    Request   @relation("RequestAttachments", fields: [request_id], references: [id], onDelete: Cascade)
+  request_id String?
+  request    Request?  @relation("RequestAttachments", fields: [request_id], references: [id], onDelete: Cascade)
   users      User[]    @relation("certificate")
 
   @@map("attachments")

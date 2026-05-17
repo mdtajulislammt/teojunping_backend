@@ -158,10 +158,8 @@ export class RegisterAgentDto {
   @IsOptional()
   professional_bio?: string;
 
-  @ApiProperty({ example: 'attachment_id' })
-  @IsString()
-  @IsNotEmpty()
-  attachment_id: string; // From file upload service
+  @ApiPropertyOptional({ type: 'string', format: 'binary', isArray: true })
+  files?: any[];
 
   @ApiProperty({ example: '' })
   @IsString()

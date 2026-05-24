@@ -919,7 +919,7 @@ export class AuthService {
   }
   // --------- end 2FA ---------
 
-  async allVolunteer(user_id: string) {
+  async allClients(user_id: string) {
     try {
       // Check if the requesting user exists
       const user = await this.userRepository.getUserDetails(user_id);
@@ -931,16 +931,47 @@ export class AuthService {
         };
       }
 
-      const volunteers = await this.userRepository.getAllVolunteers();
+      const clients = await this.userRepository.getAllClients();
 
       return {
         success: true,
-        message: 'Volunteers fetched successfully',
-        data: volunteers,
+        message: 'Clients fetched successfully',
+        data: clients,
       };
     } catch (error) {
       // Production e error log kora bhalo
-      console.error('Error fetching volunteers:', error);
+      console.error('Error fetching clients:', error);
+      return {
+        success: false,
+        message: error.message || 'Internal server error',
+      };
+    }
+  }
+
+
+
+  async allAgent(user_id: string) {
+    try {
+      // Check if the requesting user exists
+      const user = await this.userRepository.getUserDetails(user_id);
+
+      if (!user) {
+        return {
+          success: false,
+          message: 'User not found',
+        };
+      }
+
+      const agents = await this.userRepository.getAllAgents();
+
+      return {
+        success: true,
+        message: 'Agents fetched successfully',
+        data: agents,
+      };
+    } catch (error) {
+      // Production e error log kora bhalo
+      console.error('Error fetching agents:', error);
       return {
         success: false,
         message: error.message || 'Internal server error',

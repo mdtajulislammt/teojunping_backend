@@ -20,10 +20,16 @@ async function bootstrap() {
 
   app.useWebSocketAdapter(new IoAdapter(app));
   app.setGlobalPrefix('api');
-  app.enableCors();
+  app.enableCors({
+    origin: true, // Dynamically allows active development and production origins
+    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
+    credentials: true,
+    allowedHeaders: 'Content-Type, Accept, Authorization',
+  });
   app.use(
     helmet({
       contentSecurityPolicy: false,
+      crossOriginResourcePolicy: { policy: 'cross-origin' },
     }),
   );
 
@@ -67,110 +73,105 @@ async function bootstrap() {
     },
   });
 
-  // swagger setup
-  const options = new DocumentBuilder()
+  // Swagger setup
+  const config = new DocumentBuilder()
     .setTitle(`${process.env.APP_NAME} API`)
-    .setDescription(`${process.env.APP_NAME} API docs`)
+    .setDescription(`${process.env.APP_NAME} API Docs`)
     .setVersion('1.0')
-    .addTag(`${process.env.APP_NAME ?? 'Application'}`)
-    .addBearerAuth(
-      {
-        type: 'http',
-        scheme: 'bearer',
-        bearerFormat: 'JWT',
-        name: 'Authorization',
-        description: 'Enter JWT access token',
-        in: 'header',
-      },
-      'JWT-auth', // target auth identity key
-    )
+    .addTag(`${process.env.APP_NAME}`)
+    .addBearerAuth()
     .build();
 
-  const document = SwaggerModule.createDocument(app, options);
+  const document = SwaggerModule.createDocument(app, config);
 
-  // Absolute Persistence Automation Script
-  const persistentAuthScript = `
-    (function() {
-      const AUTH_KEY = 'JWT-auth';
-      const STORAGE_KEY = 'authorizedAuthorized';
+  SwaggerModule.setup('api/docs', app, document, {
+    swaggerOptions: {
+      persistAuthorization: true,
+      defaultModelsExpandDepth: -1,
+      displayRequestDuration: true,
 
-      // 1. Intercept Fetch Request to auto-capture token on login
-      const originalFetch = window.fetch;
-      window.fetch = async function(...args) {
-        const response = await originalFetch(...args);
-        const url = args[0];
-        
-        if (url && (url.includes('/login') || url.includes('/auth/login')) && response.status === 201) {
-          const clonedResponse = response.clone();
-          try {
-            const data = await clonedResponse.json();
+      // Auto authorization logic update
+      responseInterceptor: (response) => {
+        try {
+          if (
+            response.url.includes('/auth/login') &&
+            (response.status === 200 || response.status === 201)
+          ) {
+            const data = response.obj || JSON.parse(response.data);
             const token = data?.authorization?.access_token;
-            
+            const role = data?.type?.toLowerCase();
+
             if (token) {
-              const authObject = {
-                [AUTH_KEY]: {
+              const authKey =
+                role === 'sup_admin'
+                  ? 'admin_token'
+                  : role === 'secretary'
+                    ? 'secretary_token'
+                    : 'user_token';
+
+              const ui = window['ui'];
+              if (ui) {
+                const authObj = {};
+                authObj[authKey] = {
+                  name: authKey,
                   schema: {
                     type: 'http',
                     scheme: 'bearer',
                     bearerFormat: 'JWT',
-                    name: 'Authorization',
-                    in: 'header'
+                    in: 'header',
                   },
-                  value: token
+                  value: token,
+                };
+
+                ui.authActions.authorize(authObj);
+
+                try {
+                  const existing = JSON.parse(
+                    localStorage.getItem('authorized') || '{}',
+                  );
+                  existing[authKey] = authObj[authKey];
+                  localStorage.setItem('authorized', JSON.stringify(existing));
+                } catch (e) {
+                  console.error('Failed to persist token:', e);
                 }
-              };
-              
-              // LocalStorage payload write
-              localStorage.setItem(STORAGE_KEY, JSON.stringify(authObject));
-              
-              // Instant UI apply without refresh
-              if (window.ui && window.ui.authActions) {
-                window.ui.authActions.authorize(authObject);
+
+                console.log(`✅ Authorized as ${authKey}`);
               }
-              console.log('Token secured & storage state mapping complete.');
             }
-          } catch (err) {
-            console.error('Error handling sync storage token:', err);
           }
+        } catch (err) {
+          console.error('Interceptor error:', err);
         }
         return response;
-      };
-
-      // 2. Pure Hook for Page Reload: Force state parsing into Swagger UI Bundle memory
-      function forceHydrateAuth() {
-        try {
-          const savedAuth = localStorage.getItem(STORAGE_KEY);
-          if (savedAuth && window.ui && window.ui.authActions) {
-            const authObject = JSON.parse(savedAuth);
-            if (authObject && authObject[AUTH_KEY]) {
-              window.ui.authActions.authorize(authObject);
-              console.log('Auth dynamic state re-hydrated on reload successfully.');
-            }
-          }
-        } catch (e) {
-          console.error('Failed to auto-hydrate auth state:', e);
-        }
-      }
-
-      // Continuous checking loop until Swagger UI Bundle object renders completely
-      const checkUiInterval = setInterval(() => {
-        if (window.ui && window.ui.authActions) {
-          clearInterval(checkUiInterval);
-          forceHydrateAuth();
-        }
-      }, 100);
-    })();
-  `;
-
-  SwaggerModule.setup('api/docs', app, document, {
-    swaggerOptions: {
-      persistAuthorization: true, 
-      displayRequestDuration: true,
-      docExpansion: 'list',
+      },
     },
-    customJsStr: persistentAuthScript,
   });
 
-  await app.listen(process.env.PORT ?? 6001, '0.0.0.0');
+  const port = process.env.PORT ?? 4000;
+
+  // Port Conflict & Auto Recovery Mechanism
+  try {
+    await app.listen(port, '0.0.0.0');
+    console.log(`🚀 Server running on: http://localhost:${port}/api/docs`);
+  } catch (error: any) {
+    if (error.code === 'EADDRINUSE') {
+      console.warn(
+        `⚠️ Port ${port} is currently locked by a dangling Node process.`,
+      );
+      console.log(
+        `🔄 Waiting 1.5 seconds for the port to release and retrying...`,
+      );
+
+      // Deliberate delay to allow OS to clean up socket tables
+      await new Promise((resolve) => setTimeout(resolve, 1500));
+
+      await app.listen(port, '0.0.0.0');
+      console.log(
+        `🚀 Server successfully recovered and running on: http://localhost:${port}/api/docs`,
+      );
+    } else {
+      throw error;
+    }
+  }
 }
 bootstrap();

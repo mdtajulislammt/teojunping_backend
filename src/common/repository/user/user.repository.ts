@@ -64,8 +64,8 @@ export class UserRepository {
     return user;
   }
 
-  async getAllVolunteers() {
-    const volunteers = await this.prisma.user.findMany({
+  async getAllClients() {
+    const clients = await this.prisma.user.findMany({
       where: {
         type: UserType.CLIENT,
       },
@@ -83,17 +83,17 @@ export class UserRepository {
       },
     });
 
-    const volunteer_data = volunteers.map((volunteer) => {
+    const clients_data = clients.map((client) => {
       return {
-        id: volunteer.id,
-        name: volunteer.name,
-        email: volunteer.email,
-        type: volunteer.type,
-        points: volunteer.points,
-        created_at: volunteer.created_at,
-        avatar: volunteer.avatar
+        id: client.id,
+        name: client.name,
+        email: client.email,
+        type: client.type,
+        points: client.points,
+        created_at: client.created_at,
+        avatar: client.avatar
           ? TajulStorage.url(
-              appConfig().storageUrl.avatar + '/' + volunteer.avatar,
+              appConfig().storageUrl.avatar + '/' + client.avatar,
             )
           : '',
       };
@@ -101,10 +101,53 @@ export class UserRepository {
 
     return {
       success: true,
-      message: 'Volunteers fetched successfully',
-      data: volunteer_data,
+      message: 'Clients fetched successfully',
+      data: clients_data,
     };
   }
+
+  async getAllAgents() {
+    const agents = await this.prisma.user.findMany({
+      where: {
+        type: UserType.AGENT,
+      },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        type: true,
+        points: true,
+        created_at: true,
+        avatar: true,
+      },
+      orderBy: {
+        created_at: 'desc',
+      },
+    });
+
+    const agent_data = agents.map((agent) => {
+      return {
+        id: agent.id,
+        name: agent.name,
+        email: agent.email,
+        type: agent.type,
+        points: agent.points,
+        created_at: agent.created_at,
+        avatar: agent.avatar
+          ? TajulStorage.url(
+              appConfig().storageUrl.avatar + '/' + agent.avatar,
+            )
+          : '',
+      };
+    });
+
+    return {
+      success: true,
+      message: 'Agents fetched successfully',
+      data: agent_data,
+    };
+  }
+
 
   /**
    * Check existance

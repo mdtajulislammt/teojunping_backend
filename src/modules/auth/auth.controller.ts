@@ -588,14 +588,26 @@ export class AuthController {
 
   @ApiOperation({ summary: 'Get all volunteers' })
   @UseGuards(JwtAuthGuard)
-  @ApiBearerAuth()
   @ApiOkResponse({
     description: 'Get all volunteers',
     type: [VolunteerListResDto],
   })
-  @Get('all-volunteer')
-  async allVolunteer(@Req() req: any) {
+  @Get('all-clients')
+  async allClients(@Req() req: any) {
     const user_id = req.user.userId;
-    return await this.authService.allVolunteer(user_id);
+    return await this.authService.allClients(user_id);
   }
+
+
+  //get all agent user
+@ApiOperation({ summary: 'Get all agent users' })
+@UseGuards(JwtAuthGuard)
+@Get('all-agent')
+async allAgent(@Req() req: any) {
+  const user_id = req.user.userId;
+  return await this.authService.allAgent(user_id);
 }
+
+}
+
+

@@ -8,6 +8,7 @@ import appConfig from '../../../config/app.config';
 import { PrismaService } from '../../../prisma/prisma.service';
 import { Role } from '../../guard/role/role.enum';
 import { ArrayHelper } from '../../helper/array.helper';
+import { User } from 'prisma/generated/browser';
 
 @Injectable()
 export class UserRepository {
@@ -134,9 +135,7 @@ export class UserRepository {
         points: agent.points,
         created_at: agent.created_at,
         avatar: agent.avatar
-          ? TajulStorage.url(
-              appConfig().storageUrl.avatar + '/' + agent.avatar,
-            )
+          ? TajulStorage.url(appConfig().storageUrl.avatar + '/' + agent.avatar)
           : '',
       };
     });
@@ -148,6 +147,52 @@ export class UserRepository {
     };
   }
 
+  async getClientsByAgentId(agentId: string) {
+    return this.prisma.user.findMany({
+      where: {
+        assigned_agent_id: agentId,
+        type: UserType.CLIENT, // Dynamic Enum Client check
+      },
+      select: {
+        id: true,
+        name: true,
+        first_name: true,
+        last_name: true,
+        email: true,
+        phone_number: true,
+        avatar: true,
+        service_plan: true, // Show basic, standard, premium plan
+
+        // Frontend card badges handling status
+        status: true,
+        created_at: true,
+
+        // Relations handling as per UI metadata requirements
+        // Assuming models: liveStreams/Requests represents tasks or appointments
+        created_requests: {
+          select: {
+            id: true,
+            status: true, // For 'Will Status': e.g., Will Complete, In Progress
+            updated_at: true,
+          },
+          orderBy: { updated_at: 'desc' },
+          take: 1,
+        },
+        payment_transactions: {
+          select: {
+            id: true,
+            amount: true,
+            status: true, // For 'Invoice Status': e.g., Paid, Unpaid, Pending
+          },
+          orderBy: { created_at: 'desc' },
+          take: 1,
+        },
+      },
+      orderBy: {
+        created_at: 'desc',
+      },
+    });
+  }
 
   /**
    * Check existance

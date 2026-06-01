@@ -88,7 +88,7 @@ export class AuthController {
   }
 
   @ApiOperation({ summary: 'Register a new Will Writer Agent' })
-@ApiConsumes('multipart/form-data')
+  @ApiConsumes('multipart/form-data')
   @UseInterceptors(FilesInterceptor('files'))
   @ApiBody({
     type: RegisterAgentDto,
@@ -592,22 +592,30 @@ export class AuthController {
     description: 'Get all volunteers',
     type: [VolunteerListResDto],
   })
+  @ApiBearerAuth()
   @Get('all-clients')
   async allClients(@Req() req: any) {
     const user_id = req.user.userId;
     return await this.authService.allClients(user_id);
   }
 
-
   //get all agent user
-@ApiOperation({ summary: 'Get all agent users' })
-@UseGuards(JwtAuthGuard)
-@Get('all-agent')
-async allAgent(@Req() req: any) {
-  const user_id = req.user.userId;
-  return await this.authService.allAgent(user_id);
+  @ApiOperation({ summary: 'Get all agent users' })
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @Get('all-agent')
+  async allAgent(@Req() req: any) {
+    const user_id = req.user.userId;
+    return await this.authService.allAgent(user_id);
+  }
+
+  //my client by assigned_agent_id
+  @ApiOperation({ summary: 'my client by assigned_agent_id (agent)' })
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @Get('my-clients')
+  async myClients(@Req() req: any) {
+    const user_id = req.user.userId;
+    return await this.authService.myClients(user_id);
+  }
 }
-
-}
-
-

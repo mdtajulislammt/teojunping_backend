@@ -90,22 +90,37 @@ async function bootstrap() {
       defaultModelsExpandDepth: -1,
       displayRequestDuration: true,
 
-      // Auto authorization logic update
+      // 1. Persistence Logic: Reload holeo jeno authorize thake
+      onComplete: () => {
+        const ui = window['ui'];
+        if (ui) {
+          const persistedAuth = JSON.parse(
+            localStorage.getItem('authorized') || '{}',
+          );
+          if (Object.keys(persistedAuth).length > 0) {
+            ui.authActions.authorize(persistedAuth);
+          }
+        }
+      },
+
+      // 2. Interceptor: Login hole auto-set hobe
       responseInterceptor: (response) => {
         try {
+          // Apnar login endpoint check korun
           if (
             response.url.includes('/auth/login') &&
-            (response.status === 200 || response.status === 201)
+            [200, 201].includes(response.status)
           ) {
             const data = response.obj || JSON.parse(response.data);
             const token = data?.authorization?.access_token;
-            const role = data?.type?.toLowerCase();
+            // Role check logic matching your JSON structure
+            const rawRole = data?.type?.toUpperCase();
 
             if (token) {
               const authKey =
-                role === 'sup_admin'
+                rawRole === 'ADMIN'
                   ? 'admin_token'
-                  : role === 'secretary'
+                  : rawRole === 'SECRETARY'
                     ? 'secretary_token'
                     : 'user_token';
 
@@ -123,24 +138,22 @@ async function bootstrap() {
                   value: token,
                 };
 
+                // Swagger UI te instant authorize
                 ui.authActions.authorize(authObj);
 
-                try {
-                  const existing = JSON.parse(
-                    localStorage.getItem('authorized') || '{}',
-                  );
-                  existing[authKey] = authObj[authKey];
-                  localStorage.setItem('authorized', JSON.stringify(existing));
-                } catch (e) {
-                  console.error('Failed to persist token:', e);
-                }
+                // LocalStorage e save kora jate reload e na jay
+                const existing = JSON.parse(
+                  localStorage.getItem('authorized') || '{}',
+                );
+                existing[authKey] = authObj[authKey];
+                localStorage.setItem('authorized', JSON.stringify(existing));
 
-                console.log(`✅ Authorized as ${authKey}`);
+                console.log(`✅ Authorized successfully as: ${authKey}`);
               }
             }
           }
         } catch (err) {
-          console.error('Interceptor error:', err);
+          console.error('Swagger Interceptor Error:', err);
         }
         return response;
       },

@@ -166,14 +166,14 @@ export class AuthService {
           specialisation: dto.specialisation,
           professional_bio: dto.professional_bio || null,
           certificate_url: fileName
-              ? {
-                  create: {
-                    name: file.originalname,
-                    type: file.mimetype,
-                    path: fileName,
-                  },
-                }
-              : undefined,
+            ? {
+                create: {
+                  name: file.originalname,
+                  type: file.mimetype,
+                  path: fileName,
+                },
+              }
+            : undefined,
           preferred_working_hours: dto.preferred_working_hours,
           max_clients_per_month: dto.max_clients_per_month || 20,
         },
@@ -948,8 +948,6 @@ export class AuthService {
     }
   }
 
-
-
   async allAgent(user_id: string) {
     try {
       // Check if the requesting user exists
@@ -975,6 +973,57 @@ export class AuthService {
       return {
         success: false,
         message: error.message || 'Internal server error',
+      };
+    }
+  }
+
+  // my client by assigned_agent_id (agent)
+async myClients(user_id: string) {
+    try {
+      // 1. Authenticate Requesting Agent Profile
+      const agent = await this.userRepository.getUserDetails(user_id);
+      if (!agent) {
+        return {
+          success: false,
+          message: 'Agent profile structure not found.',
+        };
+      }
+
+      // 2. Fetch specific UI bound data fields
+      const clientsData = await this.userRepository.getClientsByAgentId(user_id);
+
+      // 3. Map values precisely matching standard state logic of UI cards
+      const formattedClients = clientsData.map((client) => {
+        const latestWill = client.created_requests[0] || null;
+        const latestInvoice = client.payment_transactions[0] || null;
+
+        return {
+          id: client.id,
+          name: client.name || `${client.first_name || ''} ${client.last_name || ''}`.trim(),
+          email: client.email,
+          phone: client.phone_number || 'N/A',
+          avatar: client.avatar,
+          plan: client.service_plan, // BASIC, STANDARD, PREMIUM
+          willStatus: latestWill ? latestWill.status : 'Not Started', // Card tag dynamic state
+          invoice: latestInvoice ? {
+            amount: latestInvoice.amount,
+            status: latestInvoice.status // PAID, UNPAID, PENDING
+          } : null,
+          nextAppointment: 'Apr 26, 2026' // Dynamic calculation pipeline placeholder
+        };
+      });
+
+      return {
+        success: true,
+        message: 'Dashboard clients processed successfully',
+        data: formattedClients,
+      };
+
+    } catch (error) {
+      console.error(`[Dashboard Metrics Fetch Failure] Agent Reference ID: ${user_id}`, error);
+      return {
+        success: false,
+        message: 'Failed to synchronize component view parameters.',
       };
     }
   }

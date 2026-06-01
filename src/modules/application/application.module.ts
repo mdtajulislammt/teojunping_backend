@@ -7,6 +7,7 @@ import { RequestModule } from 'src/modules/application/request/request.module';
 import { StreamModule } from 'src/modules/application/live/stream/stream.module';
 import { CallModule } from 'src/modules/application/live/call/call.module';
 import { LivekitModule } from 'src/modules/application/live/livekit/livekit.module';
+import { WillModule } from './will/will.module';
 
 @Module({
   imports: [
@@ -18,6 +19,7 @@ import { LivekitModule } from 'src/modules/application/live/livekit/livekit.modu
     StreamModule,
     CallModule,
     LivekitModule,
+    WillModule,
   ],
 })
 export class ApplicationModule {}

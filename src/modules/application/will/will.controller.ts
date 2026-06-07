@@ -1,15 +1,51 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  Param,
+  Delete,
+  HttpCode,
+  HttpStatus,
+  Req,
+} from '@nestjs/common';
 import { WillService } from './will.service';
 import { CreateWillDto } from './dto/create-will.dto';
 import { UpdateWillDto } from './dto/update-will.dto';
+import { ApiOperation, ApiParam, ApiResponse } from '@nestjs/swagger';
 
 @Controller('will')
 export class WillController {
   constructor(private readonly willService: WillService) {}
 
-  @Post()
-  create(@Body() createWillDto: CreateWillDto) {
-    return this.willService.create(createWillDto);
+  @Post('create/:userId')
+  @HttpCode(HttpStatus.CREATED)
+  @ApiOperation({
+    summary:
+      'Execute and generate a secure legal Will record for a client user_id',
+  })
+  @ApiParam({
+    name: 'userId',
+    description: 'The CUID of the Client User / Testator',
+    type: String,
+  })
+  @ApiResponse({
+    status: 211,
+    description:
+      'Will generated and mapped cleanly inside the database infrastructure.',
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Business calculation failure or entity checks invalid.',
+  })
+  async createWill(
+    @Param('userId') userId: string,
+    @Body() createWillDto: CreateWillDto,
+    @Req() req: any,
+  ) {
+    const agent_id = req.user.userId;
+    return this.willService.createWillTransaction(userId, createWillDto, agent_id);
   }
 
   @Get()

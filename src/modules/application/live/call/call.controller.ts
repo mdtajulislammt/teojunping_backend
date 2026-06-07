@@ -2,6 +2,7 @@ import { Body, Controller, Post, Req, UseGuards } from '@nestjs/common';
 import {
   ApiBearerAuth,
   ApiBody,
+  ApiExcludeController,
   ApiOperation,
   ApiResponse,
 } from '@nestjs/swagger';
@@ -13,6 +14,7 @@ import { JwtAuthGuard } from 'src/modules/auth/guards/jwt-auth.guard';
 import { LivekitService } from '../livekit/livekit.service';
 import { NotificationRepository } from 'src/common/repository/notification/notification.repository';
 
+@ApiExcludeController()
 @Controller('v1/video-calls')
 export class CallController {
   constructor(
@@ -23,6 +25,7 @@ export class CallController {
   /**
    * 1. Caller initiates the call and notifies the receiver
    */
+
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Initiate a call' })
   @ApiBody({ type: InitiateCallDto })
@@ -38,8 +41,6 @@ export class CallController {
 
     // 2. Generate token for the Caller
     const token = await this.livekitService.getCallToken(room_name, caller_id);
-
-    
 
     // 3. Create Notification for the Receiver
     // This allows the receiver's UI to show the "Incoming Call" prompt

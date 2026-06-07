@@ -48,20 +48,19 @@ model User {
   avatar        String?
   type          UserType  @default(CLIENT)
 
-
   //client specific fields 
   service_plan      ServicePlan? @default(BASIC)
   assigned_agent_id String?
 
   //agent specific fields 
-  certification_body      String?     @map("certification_body")
-  certification_number    String?     @map("certification_number")
-  years_of_experience     String?     @map("years_of_experience")
-  specialisation          String?     @map("specialisation")
-  professional_bio        String?     @map("professional_bio") @db.Text
+  certification_body      String?      @map("certification_body")
+  certification_number    String?      @map("certification_number")
+  years_of_experience     String?      @map("years_of_experience")
+  specialisation          String?      @map("specialisation")
+  professional_bio        String?      @map("professional_bio") @db.Text
   certificate_url         Attachment[] @relation("certificate")
-  preferred_working_hours String?     @map("preferred_working_hours")
-  max_clients_per_month   Int?        @default(20) @map("max_clients_per_month")
+  preferred_working_hours String?      @map("preferred_working_hours")
+  max_clients_per_month   Int?         @default(20) @map("max_clients_per_month")
 
   // Other Existing Fields
   username              String?  @unique
@@ -100,6 +99,9 @@ model User {
   role_users            RoleUser[]
   ucodes                Ucode[]
   user_payment_methods  UserPaymentMethod[]
+  // Named relations for fixing the ambiguous error
+  willsAsAgent          Will[]               @relation("AgentWills")
+  willsAsClient         Will[]               @relation("ClientWills")
 
   @@map("users")
 }
@@ -462,4 +464,172 @@ enum MessageStatus {
   DELIVERED
   READ
   PENDING
+}
+
+enum PlanType {
+  STANDARD
+  PREMIUM
+}
+
+enum InvoiceStatus {
+  PENDING
+  PAID
+  FAILED
+}
+
+enum RelationshipType {
+  SPOUSE_PARTNER
+  CHILD
+  SIBLING
+  PARENT
+  FRIEND
+  OTHER
+}
+
+// will model ......................................
+
+enum MaritalStatus {
+  SINGLE
+  MARRIED
+  DIVORCED
+  WIDOWED
+  CIVIL_PARTNERSHIP
+  SEPARATED
+
+  @@map("marital_status")
+}
+
+enum BeneficiaryType {
+  PRIMARY
+  RESIDUARY
+
+  @@map("beneficiary_type")
+}
+
+enum WillStatus {
+  DRAFT
+  PENDING_REVIEW
+  COMPLETED
+  REVOKED
+
+  @@map("will_status")
+}
+
+model Will {
+  id        String     @id @default(cuid())
+  agent_id  String     @map("agent_id")
+  client_id String     @map("client_id")
+  status    WillStatus @default(DRAFT)
+
+  // Step 1A: Testator Information
+  testatorFullName    String        @map("testator_full_name") @db.VarChar(255)
+  testatorDob         DateTime      @map("testator_dob") @db.Date
+  nationalInsuranceNo String?       @map("national_insurance_no") @db.VarChar(50)
+  maritalStatus       MaritalStatus @map("marital_status")
+  currentAddress      String        @map("current_address") @db.Text
+  nationality         String        @map("nationality") @db.VarChar(100)
+  occupation          String?       @map("occupation") @db.VarChar(150)
+  previouslyMadeWill  Boolean       @default(false) @map("previously_made_will")
+
+  // Step 1B & Step 6 Checklist Flags
+  hasImmediateDependants Boolean @default(false) @map("has_immediate_dependants")
+  hasChildren            Boolean @default(false) @map("has_children")
+  hasExclusions          Boolean @default(false) @map("has_exclusions")
+
+  // Step 1: Agent Confirmations
+  agentConfirmSoundMind Boolean @default(false) @map("agent_confirm_sound_mind")
+  agentConfirmVerified  Boolean @default(false) @map("agent_confirm_verified")
+
+  // Step 3: Executor Powers
+  powerToSellProperty Boolean @default(false) @map("power_to_sell_property")
+
+  // Step 6: Final Checklist Verification Timestamps
+  testatorInfoCorrect  Boolean @default(false) @map("testator_info_correct")
+  sharesTotalAllocated Boolean @default(false) @map("shares_total_allocated")
+  executorsCorrect     Boolean @default(false) @map("executors_correct")
+  exclusionsReviewed   Boolean @default(false) @map("exclusions_reviewed")
+  childrenConfirmed    Boolean @default(false) @map("children_confirmed")
+  sectionsApproved     Boolean @default(false) @map("sections_approved")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  agent         User          @relation("AgentWills", fields: [agent_id], references: [id], onDelete: Cascade)
+  client        User          @relation("ClientWills", fields: [client_id], references: [id], onDelete: Cascade)
+  dependants    Dependant[]
+  beneficiaries Beneficiary[]
+  executors     Executor[]
+  exclusions    Exclusion[]
+
+  @@index([agent_id])
+  @@index([client_id])
+  @@index([status])
+  @@map("wills")
+}
+
+model Dependant {
+  id           String           @id @default(uuid())
+  willId       String           @map("will_id")
+  fullName     String           @map("full_name") @db.VarChar(255)
+  relationship RelationshipType
+  createdAt    DateTime         @default(now()) @map("created_at")
+  updatedAt    DateTime         @updatedAt @map("updated_at")
+
+  will Will @relation(fields: [willId], references: [id], onDelete: Cascade)
+
+  @@index([willId])
+  @@map("dependants")
+}
+
+model Beneficiary {
+  id              String           @id @default(uuid())
+  willId          String           @map("will_id")
+  type            BeneficiaryType
+  fullName        String           @map("full_name") @db.VarChar(255)
+  relationship    RelationshipType
+  dob             DateTime?        @map("dob") @db.Date
+  sharePercentage Decimal          @map("share_percentage") @db.Decimal(5, 2)
+  contactAddress  String?          @map("contact_address") @db.Text
+  isMinor         Boolean          @default(false) @map("is_minor")
+  specificBequest String?          @map("specific_bequest") @db.Text
+  createdAt       DateTime         @default(now()) @map("created_at")
+  updatedAt       DateTime         @updatedAt @map("updated_at")
+
+  will Will @relation(fields: [willId], references: [id], onDelete: Cascade)
+
+  @@index([willId])
+  @@map("beneficiaries")
+}
+
+model Executor {
+  id           String           @id @default(uuid())
+  willId       String           @map("will_id")
+  priority     Int              @default(1) // 1 = Primary, 2 = Secondary, etc.
+  firstName    String           @map("first_name") @db.VarChar(100)
+  relationship RelationshipType
+  email        String           @db.VarChar(255)
+  phone        String           @db.VarChar(50)
+  address      String           @db.Text
+  createdAt    DateTime         @default(now()) @map("created_at")
+  updatedAt    DateTime         @updatedAt @map("updated_at")
+
+  will Will @relation(fields: [willId], references: [id], onDelete: Cascade)
+
+  @@index([willId])
+  @@map("executors")
+}
+
+model Exclusion {
+  id           String           @id @default(uuid())
+  willId       String           @map("will_id")
+  fullName     String           @map("full_name") @db.VarChar(255)
+  relationship RelationshipType
+  reason       String?          @db.Text
+  createdAt    DateTime         @default(now()) @map("created_at")
+  updatedAt    DateTime         @updatedAt @map("updated_at")
+
+  will Will @relation(fields: [willId], references: [id], onDelete: Cascade)
+
+  @@index([willId])
+  @@map("exclusions")
 }

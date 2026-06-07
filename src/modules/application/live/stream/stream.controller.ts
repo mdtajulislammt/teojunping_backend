@@ -10,6 +10,7 @@ import {
 import {
   ApiBearerAuth,
   ApiBody,
+  ApiExcludeController,
   ApiOperation,
   ApiParam,
   ApiTags,
@@ -17,6 +18,7 @@ import {
 import { JwtAuthGuard } from 'src/modules/auth/guards/jwt-auth.guard';
 import { StreamService } from './stream.service';
 
+@ApiExcludeController()
 @ApiTags('Live Stream')
 @Controller('v1/streams')
 export class StreamController {

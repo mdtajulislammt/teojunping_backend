@@ -3,29 +3,33 @@ import { Command, CommandRunner } from 'nest-commander';
 import * as bcrypt from 'bcrypt';
 import { PrismaService } from '../prisma/prisma.service';
 
-@Command({ name: 'seed', description: 'Prisma DB Seed for Admin, Agent, and Client' })
+@Command({
+  name: 'seed',
+  description: 'Prisma DB Seed for Admin, Agent, and Client',
+})
 export class SeedCommand extends CommandRunner {
   constructor(private readonly prisma: PrismaService) {
     super();
   }
 
   async run(): Promise<void> {
-    console.log('🚀 [SEED CRITICAL]: Run method successfully invoked by Commander!');
+    console.log(
+      '🚀 [SEED CRITICAL]: Run method successfully invoked by Commander!',
+    );
     try {
       await this.prisma.$transaction(async ($tx) => {
         console.log('🔄 [SEED TRANSACTION]: Executing roles...');
         await this.roleSeed($tx);
-        
+
         console.log('🔄 [SEED TRANSACTION]: Executing users...');
         await this.userSeed($tx);
       });
       console.log('✅ [SEED SUCCESS]: Database seeding completed.');
-      
+
       // CRITICAL FIX: Redis/BullMQ connections context background thread force-exit kora holo
       setTimeout(() => {
         process.exit(0);
       }, 1000);
-
     } catch (error) {
       console.error('❌ [SEED ERROR]: Exception caught inside run():', error);
       process.exit(1);
@@ -53,11 +57,11 @@ export class SeedCommand extends CommandRunner {
 
     // A. Admin User
     const admin = await tx.user.upsert({
-      where: { email: 'admin@system.com' },
+      where: { email: 'admin@gmail.com' },
       update: {},
       create: {
         username: 'admin_user',
-        email: 'admin@system.com',
+        email: 'admin@gmail.com',
         password: hashedPassword,
         first_name: 'System',
         last_name: 'Admin',
@@ -69,11 +73,11 @@ export class SeedCommand extends CommandRunner {
 
     // B. Agent User
     const agent = await tx.user.upsert({
-      where: { email: 'agent@service.com' },
+      where: { email: 'agent@gmail.com' },
       update: {},
       create: {
         username: 'agent_pro',
-        email: 'agent@service.com',
+        email: 'agent@gmail.com',
         password: hashedPassword,
         first_name: 'John',
         last_name: 'Agent',
@@ -87,11 +91,11 @@ export class SeedCommand extends CommandRunner {
 
     // C. Client User (Linked with Agent ID)
     const client = await tx.user.upsert({
-      where: { email: 'client@startup.com' },
+      where: { email: 'client@gmail.com' },
       update: {},
       create: {
         username: 'client_alpha',
-        email: 'client@startup.com',
+        email: 'client@gmail.com',
         password: hashedPassword,
         first_name: 'Sarah',
         last_name: 'Client',

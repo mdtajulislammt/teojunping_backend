@@ -105,55 +105,42 @@ async function bootstrap() {
 
       // 2. Interceptor: Login hole auto-set hobe
       responseInterceptor: (response) => {
-        try {
-          // Apnar login endpoint check korun
-          if (
-            response.url.includes('/auth/login') &&
-            [200, 201].includes(response.status)
-          ) {
-            const data = response.obj || JSON.parse(response.data);
+        if (
+          response.url &&
+          response.url.includes('/auth/login') &&
+          response.status === 200
+        ) {
+          try {
+            const data =
+              typeof response.body === 'string'
+                ? JSON.parse(response.body)
+                : response.body;
             const token = data?.authorization?.access_token;
-            // Role check logic matching your JSON structure
-            const rawRole = data?.type?.toUpperCase();
 
             if (token) {
-              const authKey =
-                rawRole === 'ADMIN'
-                  ? 'admin_token'
-                  : rawRole === 'SECRETARY'
-                    ? 'secretary_token'
-                    : 'user_token';
-
-              const ui = window['ui'];
-              if (ui) {
-                const authObj = {};
-                authObj[authKey] = {
-                  name: authKey,
+              // .addBearerAuth() creates scheme named 'bearer'
+              const authObj = {
+                bearer: {
+                  name: 'bearer',
                   schema: {
                     type: 'http',
                     scheme: 'bearer',
                     bearerFormat: 'JWT',
-                    in: 'header',
                   },
                   value: token,
-                };
+                },
+              };
 
-                // Swagger UI te instant authorize
+              const ui = window['ui'];
+              if (ui) {
                 ui.authActions.authorize(authObj);
-
-                // LocalStorage e save kora jate reload e na jay
-                const existing = JSON.parse(
-                  localStorage.getItem('authorized') || '{}',
-                );
-                existing[authKey] = authObj[authKey];
-                localStorage.setItem('authorized', JSON.stringify(existing));
-
-                console.log(`✅ Authorized successfully as: ${authKey}`);
+                localStorage.setItem('authorized', JSON.stringify(authObj));
+                console.log('✅ Auto-authorized via login interceptor');
               }
             }
+          } catch (err) {
+            console.warn('Swagger Interceptor:', err);
           }
-        } catch (err) {
-          console.error('Swagger Interceptor Error:', err);
         }
         return response;
       },

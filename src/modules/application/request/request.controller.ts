@@ -20,6 +20,7 @@ import {
   ApiBearerAuth,
   ApiBody,
   ApiConsumes,
+  ApiExcludeController,
   ApiOperation,
   ApiQuery,
   ApiResponse,
@@ -30,6 +31,7 @@ import { JwtAuthGuard } from 'src/modules/auth/guards/jwt-auth.guard';
 import { CreateFeedbackDto, CreateRequestDto } from './dto/create-request.dto';
 import { RequestService } from './request.service';
 
+@ApiExcludeController()
 @ApiTags('Help Requests')
 @ApiBearerAuth()
 @Controller('requests')
@@ -89,7 +91,11 @@ export class RequestController {
     @Req() req: any,
   ) {
     const user_id = req.user.userId;
-    return await this.requestService.getCompletedRequests({ page, limit, user_id });
+    return await this.requestService.getCompletedRequests({
+      page,
+      limit,
+      user_id,
+    });
   }
 
   @Get('my-requests')

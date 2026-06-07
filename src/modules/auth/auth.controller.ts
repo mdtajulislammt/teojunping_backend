@@ -2,8 +2,10 @@ import {
   Body,
   Controller,
   Get,
+  HttpCode,
   HttpException,
   HttpStatus,
+  InternalServerErrorException,
   Patch,
   Post,
   Req,
@@ -108,18 +110,14 @@ export class AuthController {
     }
   }
 
-  // *login user
-  @ApiOkResponse({ type: LoginUserResDto })
-  @ApiOperation({
-    summary: 'User login Success',
-  })
-  @ApiBody({
-    type: LoginUserResDto,
-  })
-  @UseGuards(LocalAuthGuard)
+  
   @Post('login')
+  @UseGuards(LocalAuthGuard)
+  @ApiOperation({ summary: 'User login Success' })
+  @ApiBody({ type: LoginUserResDto })
+  @ApiResponse({ status: 200, description: 'Login successful', })
   async login(
-    @Req() req: Request,
+    @Req() req: any,
     @Res() res: Response,
     @Body() body: { fcm_token?: string },
   ) {
@@ -133,21 +131,27 @@ export class AuthController {
         fcm_token: body.fcm_token,
       });
 
-      // store to secure cookies
-      res.cookie('refresh_token', response.authorization.refresh_token, {
-        httpOnly: true,
-        secure: true,
-        maxAge: 1000 * 60 * 60 * 24 * 7,
-      });
-      res.json(response);
+      console.log('login response successfully logged:', response);
+
+      // Cookie set only when authorization exists (successful login)
+      if (response.authorization?.refresh_token) {
+        res.cookie('refresh_token', response.authorization.refresh_token, {
+          httpOnly: true,
+          secure: process.env.NODE_ENV === 'production',
+          sameSite: 'strict',
+          maxAge: 1000 * 60 * 60 * 24 * 7, // 7 days
+        });
+      }
+
+      return res.status(200).json(response);
     } catch (error) {
-      return {
+      console.error('Controller Error:', error.message);
+      return res.status(500).json({
         success: false,
-        message: error.message,
-      };
+        message: error.message || 'Authentication failed',
+      });
     }
   }
-
   // *update user
   // @ApiExcludeEndpoint()
   @UseGuards(JwtAuthGuard)

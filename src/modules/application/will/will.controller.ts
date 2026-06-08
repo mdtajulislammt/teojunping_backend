@@ -9,13 +9,22 @@ import {
   HttpCode,
   HttpStatus,
   Req,
+  UseGuards,
 } from '@nestjs/common';
 import { WillService } from './will.service';
 import { CreateWillDto } from './dto/create-will.dto';
 import { UpdateWillDto } from './dto/update-will.dto';
-import { ApiOperation, ApiParam, ApiResponse } from '@nestjs/swagger';
+import {
+  ApiBearerAuth,
+  ApiOperation,
+  ApiParam,
+  ApiResponse,
+} from '@nestjs/swagger';
+import { JwtAuthGuard } from 'src/modules/auth/guards/jwt-auth.guard';
 
 @Controller('will')
+@UseGuards(JwtAuthGuard)
+@ApiBearerAuth()
 export class WillController {
   constructor(private readonly willService: WillService) {}
 
@@ -45,7 +54,12 @@ export class WillController {
     @Req() req: any,
   ) {
     const agent_id = req.user.userId;
-    return this.willService.createWillTransaction(userId, createWillDto, agent_id);
+    console.log('userId::>>', userId, agent_id);
+    return this.willService.createWillTransaction(
+      userId,
+      createWillDto,
+      agent_id,
+    );
   }
 
   @Get()

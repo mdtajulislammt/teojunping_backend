@@ -131,7 +131,7 @@ export class AuthController {
         fcm_token: body.fcm_token,
       });
 
-      console.log('login response successfully logged:', response);
+      // console.log('login response successfully logged:', response);
 
       // Cookie set only when authorization exists (successful login)
       if (response.authorization?.refresh_token) {

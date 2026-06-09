@@ -63,13 +63,27 @@ export class WillController {
   }
 
   @Get()
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Get all Will records',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Will records retrieved successfully.',
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'Unauthorized.',
+  })
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
   findAll() {
     return this.willService.findAll();
   }
 
   @Get(':id')
   findOne(@Param('id') id: string) {
-    return this.willService.findOne(+id);
+    return this.willService.findOne(id);
   }
 
   @Patch(':id')

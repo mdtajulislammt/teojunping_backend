@@ -11,7 +11,11 @@ import { PrismaService } from 'src/prisma/prisma.service';
 export class WillService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async createWillTransaction(clientId: string, dto: CreateWillDto, agentId: string) {
+  async createWillTransaction(
+    clientId: string,
+    dto: CreateWillDto,
+    agentId: string,
+  ) {
     if (dto.beneficiaries && dto.beneficiaries.length > 0) {
       const totalShares = dto.beneficiaries.reduce(
         (sum, b) => sum + Number(b.sharePercentage),
@@ -130,7 +134,7 @@ export class WillService {
           status: 'success',
           statusCode: 201,
           message: 'Will generation block compiled and executed smoothly.',
-          payload: newWill,
+          data: newWill,
         };
       });
     } catch (err) {
@@ -141,12 +145,49 @@ export class WillService {
     }
   }
 
-  findAll() {
-    return `This action returns all will`;
+  async findAll() {
+    try {
+      const wills = await this.prisma.will.findMany();
+      return {
+        status: 'success',
+        statusCode: 200,
+        message: 'Will records retrieved successfully.',
+        data: wills,
+      };
+    } catch (err) {
+      throw new InternalServerErrorException(
+        `An elite runtime database rollback triggered during Will retrieval: ${err.message}`,
+      );
+    }
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} will`;
+  async findOne(id: string) {
+    try {
+      const will = await this.prisma.will.findUnique({
+        where: { id },
+        include: {
+          dependants: true,
+          beneficiaries: true,
+          executors: true,
+          exclusions: true,
+        },
+      });
+      if (!will) {
+        throw new BadRequestException(
+          `Will record with ID: '${id}' does not exist inside our directory.`,
+        );
+      }
+      return {
+        status: 'success',
+        statusCode: 200,
+        message: 'Will record retrieved successfully.',
+        payload: will,
+      };
+    } catch (err) {
+      throw new InternalServerErrorException(
+        `An elite runtime database rollback triggered during Will retrieval: ${err.message}`,
+      );
+    }
   }
 
   update(id: number, updateWillDto: UpdateWillDto) {

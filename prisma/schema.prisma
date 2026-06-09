@@ -410,16 +410,17 @@ model Contact {
 }
 
 model Attachment {
-  id         String    @id @default(cuid())
-  created_at DateTime  @default(now())
-  updated_at DateTime  @default(now())
+  id         String            @id @default(cuid())
+  created_at DateTime          @default(now())
+  updated_at DateTime          @default(now())
   deleted_at DateTime?
   name       String?
   type       String?
   path       String?
   request_id String?
-  request    Request?  @relation("RequestAttachments", fields: [request_id], references: [id], onDelete: Cascade)
-  users      User[]    @relation("certificate")
+  request    Request?          @relation("RequestAttachments", fields: [request_id], references: [id], onDelete: Cascade)
+  users      User[]            @relation("certificate")
+  bequests   SpecificBequest[] @relation("SpecificBequestAttachments")
 
   @@map("attachments")
 }
@@ -554,12 +555,13 @@ model Will {
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
-  agent         User          @relation("AgentWills", fields: [agent_id], references: [id], onDelete: Cascade)
-  client        User          @relation("ClientWills", fields: [client_id], references: [id], onDelete: Cascade)
-  dependants    Dependant[]
-  beneficiaries Beneficiary[]
-  executors     Executor[]
-  exclusions    Exclusion[]
+  agent            User              @relation("AgentWills", fields: [agent_id], references: [id], onDelete: Cascade)
+  client           User              @relation("ClientWills", fields: [client_id], references: [id], onDelete: Cascade)
+  dependants       Dependant[]
+  beneficiaries    Beneficiary[]
+  executors        Executor[]
+  exclusions       Exclusion[]
+  specificBequests SpecificBequest[]
 
   @@index([agent_id])
   @@index([client_id])
@@ -595,7 +597,8 @@ model Beneficiary {
   createdAt       DateTime         @default(now()) @map("created_at")
   updatedAt       DateTime         @updatedAt @map("updated_at")
 
-  will Will @relation(fields: [willId], references: [id], onDelete: Cascade)
+  will             Will              @relation(fields: [willId], references: [id], onDelete: Cascade)
+  specificBequests SpecificBequest[]
 
   @@index([willId])
   @@map("beneficiaries")
@@ -632,4 +635,57 @@ model Exclusion {
 
   @@index([willId])
   @@map("exclusions")
+}
+
+enum ItemCategory {
+  RESIDENTIAL_PROPERTY
+  COMMERCIAL_PROPERTY
+  LAND_PLOTS
+  CASH_BANK_ACCOUNT
+  STOCKS_SHARES
+  MUTUAL_FUNDS_BONDS
+  RETIREMENT_PENSIONS
+  LIFE_INSURANCE
+  JEWELLERY_PRECIOUS_METALS
+  ART_AND_ANTIQUES
+  COLLECTIBLES
+  VEHICLES
+  ELECTRONICS_GADGETS
+  FURNITURE_HOME_APPLIANCES
+  CLOTHING_ACCESSORIES
+  DIGITAL_ASSETS
+  INTELLECTUAL_PROPERTY
+  BUSINESS_INTEREST_EQUITY
+  PETS_LIVESTOCK
+  MEMORABILIA_SENTIMENTAL
+  OTHER
+
+  @@map("item_category")
+}
+
+model SpecificBequest {
+  id               String        @id @default(uuid())
+  agent_id         String        @map("agent_id")
+  client_id        String        @map("client_id")
+  item_category    ItemCategory?
+  estimated_value  Decimal?      @map("estimated_value") @db.Decimal(12, 2)
+  item_name        String        @map("item_name") @db.VarChar(255)
+  full_description String        @map("full_description") @db.Text
+  location_storage String?       @map("location_storage") @db.VarChar(255)
+  serial_reference String?       @map("serial_reference") @db.VarChar(100)
+  attachments      Attachment[]  @relation("SpecificBequestAttachments")
+  beneficiary_id   String        @map("beneficiary_id")
+
+  created_at DateTime @default(now()) @map("created_at")
+  updated_at DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  beneficiary Beneficiary? @relation(fields: [beneficiary_id], references: [id], onDelete: SetNull)
+  will        Will?        @relation(fields: [willId], references: [id])
+  willId      String?
+
+  @@index([agent_id])
+  @@index([client_id])
+  @@index([beneficiary_id])
+  @@map("specific_bequests")
 }

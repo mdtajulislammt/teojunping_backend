@@ -8,6 +8,7 @@ import { StreamModule } from 'src/modules/application/live/stream/stream.module'
 import { CallModule } from 'src/modules/application/live/call/call.module';
 import { LivekitModule } from 'src/modules/application/live/livekit/livekit.module';
 import { WillModule } from './will/will.module';
+import { SpecificbequestsModule } from './specificbequests/specificbequests.module';
 
 @Module({
   imports: [
@@ -20,6 +21,7 @@ import { WillModule } from './will/will.module';
     CallModule,
     LivekitModule,
     WillModule,
+    SpecificbequestsModule,
   ],
 })
 export class ApplicationModule {}

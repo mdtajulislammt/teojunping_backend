@@ -1,15 +1,7 @@
-// src/will/dto/create-specific-bequest.dto.ts
+// src/modules/application/specificbequests/dto/create-specificbequest.dto.ts
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Transform } from 'class-transformer';
-import {
-  IsString,
-  IsEnum,
-  IsOptional,
-  IsNumber,
-  IsArray,
-  IsNotEmpty,
-  Min,
-} from 'class-validator';
+import { IsString, IsEnum, IsOptional, IsNumber, IsNotEmpty, Min } from 'class-validator';
 import { ItemCategory } from 'prisma/generated/client';
 
 export class CreateSpecificbequestDto {
@@ -26,6 +18,7 @@ export class CreateSpecificbequestDto {
     example: ItemCategory.JEWELLERY_PRECIOUS_METALS,
   })
   @IsEnum(ItemCategory)
+  @IsNotEmpty()
   itemCategory: ItemCategory;
 
   @ApiProperty({ example: 'Vintage Rolex Submariner 1982' })
@@ -34,8 +27,7 @@ export class CreateSpecificbequestDto {
   itemName: string;
 
   @ApiProperty({
-    example:
-      'Solid 18k gold oyster perpetual watch with blue dial, stored in the master bedroom safe.',
+    example: 'Solid 18k gold oyster perpetual watch with blue dial, stored in the master bedroom safe.',
   })
   @IsString()
   @IsNotEmpty()
@@ -45,6 +37,7 @@ export class CreateSpecificbequestDto {
     example: 15500.0,
     description: 'Estimated value of the item',
   })
+  @Transform(({ value }) => (value ? Number(value) : undefined)) // Form-data string-to-number correction
   @IsNumber({ maxDecimalPlaces: 2 })
   @Min(0)
   @IsOptional()

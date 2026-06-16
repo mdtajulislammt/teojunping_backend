@@ -102,6 +102,8 @@ model User {
   // Named relations for fixing the ambiguous error
   willsAsAgent          Will[]               @relation("AgentWills")
   willsAsClient         Will[]               @relation("ClientWills")
+  assetsAsAgent         Asset[]              @relation("AgentAssets")
+  assetsAsClient        Asset[]              @relation("ClientAssets")
 
   @@map("users")
 }
@@ -688,4 +690,42 @@ model SpecificBequest {
   @@index([client_id])
   @@index([beneficiary_id])
   @@map("specific_bequests")
+}
+
+enum AssetType {
+  PROPERTY
+  FINANCIAL
+  VEHICLES
+  VALUABLES
+  DEBTS
+
+  @@map("asset_type")
+}
+
+model Asset {
+  id String @id @default(uuid())
+
+  agent_id   String    @map("agent_id")
+  client_id  String    @map("client_id")
+  asset_type AssetType @map("asset_type")
+
+  // Real Estate & Property Fields
+  property_address     String? @map("property_address") @db.Text
+  ownership_type       String? @map("ownership_type")
+  property_type        String? @map("property_type") @db.VarChar(100) // e.g., Residential, Commercial
+  estimated_value      Decimal @default(0.00) @map("estimated_value") @db.Decimal(12, 2)
+  outstanding_mortgage Decimal @default(0.00) @map("outstanding_mortgage") @db.Decimal(12, 2)
+  additional_notes     String? @map("additional_notes") @db.Text
+
+  created_at DateTime @default(now()) @map("created_at")
+  updated_at DateTime @updatedAt @map("updated_at")
+
+  // Relations matching your explicit system rules
+  agent  User @relation("AgentAssets", fields: [agent_id], references: [id], onDelete: Cascade)
+  client User @relation("ClientAssets", fields: [client_id], references: [id], onDelete: Cascade)
+
+  @@index([client_id])
+  @@index([agent_id])
+  @@index([asset_type])
+  @@map("assets")
 }

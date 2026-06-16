@@ -1,3 +1,4 @@
+// src/modules/application/specificbequests/specificbequests.service.ts
 import {
   BadRequestException,
   ForbiddenException,
@@ -14,6 +15,7 @@ import { TajulStorage } from 'src/common/lib/Disk/TajulStorage';
 export class SpecificbequestsService {
   constructor(private readonly prisma: PrismaService) {}
 
+  // ১. CREATE METHOD (With Multiple Attachment Support)
   async createSpecificbequest(
     clientId: string,
     agentId: string,
@@ -21,14 +23,24 @@ export class SpecificbequestsService {
     files: Express.Multer.File[],
   ) {
     const { beneficiaryId, willId, ...coreBequestData } = dto;
-
-    let fileName = '';
     const folder = 'leads';
-    const file = files && files.length > 0 ? files[0] : null;
+    const uploadedAttachments: Array<{
+      name: string;
+      type: string;
+      path: string;
+    }> = [];
 
-    if (file) {
-      fileName = `${Date.now()}-${file.originalname.replace(/\s+/g, '_')}`;
-      await TajulStorage.put(`${folder}/${fileName}`, file.buffer);
+    if (files && files.length > 0) {
+      for (const file of files) {
+        const fileName = `${Date.now()}-${file.originalname.replace(/\s+/g, '_')}`;
+        await TajulStorage.put(`${folder}/${fileName}`, file.buffer);
+
+        uploadedAttachments.push({
+          name: file.originalname,
+          type: file.mimetype,
+          path: fileName,
+        });
+      }
     }
 
     try {
@@ -36,32 +48,28 @@ export class SpecificbequestsService {
         const clientUser = await tx.user.findUnique({
           where: { id: clientId },
         });
-        if (!clientUser) {
+        if (!clientUser)
           throw new BadRequestException(
             `Target Client '${clientId}' not found.`,
           );
-        }
 
         const agentUser = await tx.user.findUnique({ where: { id: agentId } });
-        if (!agentUser) {
+        if (!agentUser)
           throw new BadRequestException(`Acting Agent '${agentId}' not found.`);
-        }
 
         const targetWill = await tx.will.findUnique({ where: { id: willId } });
-        if (!targetWill) {
+        if (!targetWill)
           throw new BadRequestException(
             `Target Will record '${willId}' not found.`,
           );
-        }
 
         const targetBeneficiary = await tx.beneficiary.findUnique({
           where: { id: beneficiaryId },
         });
-        if (!targetBeneficiary) {
+        if (!targetBeneficiary)
           throw new BadRequestException(
             `Designated Beneficiary '${beneficiaryId}' not found.`,
           );
-        }
 
         if (targetBeneficiary.willId !== willId) {
           throw new BadRequestException(
@@ -74,24 +82,19 @@ export class SpecificbequestsService {
             item_category: coreBequestData.itemCategory,
             item_name: coreBequestData.itemName,
             full_description: coreBequestData.fullDescription,
-            estimated_value: coreBequestData.estimatedValue,
-            location_storage: coreBequestData.locationStorage,
-            serial_reference: coreBequestData.serialReference,
+            estimated_value: coreBequestData.estimatedValue || 0.0,
+            location_storage: coreBequestData.locationStorage || null,
+            serial_reference: coreBequestData.serialReference || null,
             agent_id: agentId,
             client_id: clientId,
             beneficiary_id: beneficiaryId,
             willId: willId,
-            attachments: fileName
-              ? {
-                  create: [
-                    {
-                      name: file.originalname,
-                      type: file.mimetype,
-                      path: fileName,
-                    },
-                  ],
-                }
-              : undefined,
+            attachments:
+              uploadedAttachments.length > 0
+                ? {
+                    create: uploadedAttachments,
+                  }
+                : undefined,
           },
           include: {
             attachments: true,
@@ -103,8 +106,7 @@ export class SpecificbequestsService {
         return {
           status: 'success',
           statusCode: 201,
-          message:
-            'Specific Bequest asset logged and tied successfully under security standards.',
+          message: 'Specific Bequest asset logged successfully.',
           payload: newBequest,
         };
       });
@@ -116,25 +118,13 @@ export class SpecificbequestsService {
     }
   }
 
-  // Get all specific bequests
-
-  async getAllBequests(willId?: string) {
-    return await this.prisma.specificBequest.findMany({
-      where: willId ? { willId } : {},
-      include: {
-        attachments: true,
-        beneficiary: {
-          select: { id: true, fullName: true, relationship: true },
-        },
+  //get
+  async getAllSpecificBequests(clientId: string, agentId: string) {
+    const specificBequests = await this.prisma.specificBequest.findMany({
+      where: {
+        client_id: clientId,
+        agent_id: agentId,
       },
-      orderBy: { created_at: 'desc' },
-    });
-  }
-
-  // ২. GET SINGLE: আইডি দিয়ে সুনির্দিষ্ট একটি Bequest খুঁজে বের করা
-  async getBequestById(id: string) {
-    const bequest = await this.prisma.specificBequest.findUnique({
-      where: { id },
       include: {
         attachments: true,
         beneficiary: true,
@@ -142,27 +132,58 @@ export class SpecificbequestsService {
       },
     });
 
-    if (!bequest) {
-      throw new NotFoundException(
-        `Specific Bequest asset with ID '${id}' was not found.`,
+    if (specificBequests.length === 0) {
+      throw new BadRequestException(
+        'No specific bequests found for the provided client and agent.',
       );
     }
-    return bequest;
+
+    return {
+      status: 'success',
+      statusCode: 200,
+      message: 'Specific bequests fetched successfully.',
+      payload: specificBequests,
+    };
+  }
+
+  // get single specific bequest
+  async getSpecificBequest(id: string, agentId: string) {
+    const specificBequest = await this.prisma.specificBequest.findUnique({
+      where: { id, agent_id: agentId },
+      include: {
+        attachments: true,
+        beneficiary: true,
+        will: true,
+      },
+    });
+
+    if (!specificBequest) {
+      throw new NotFoundException('Specific bequest not found.');
+    }
+
+    return {
+      status: 'success',
+      statusCode: 200,
+      message: 'Specific bequest fetched successfully.',
+      data: specificBequest,
+    };
   }
 
   async updateBequestTransaction(
     id: string,
     dto: UpdateSpecificbequestDto,
     requestUserId: string,
+    files?: Express.Multer.File[],
   ) {
-    const currentBequest = await this.getBequestById(id);
+    const result = await this.getBequestById(id);
+    const currentBequest = result.data;
 
     if (
       currentBequest.agent_id !== requestUserId &&
       currentBequest.client_id !== requestUserId
     ) {
       throw new ForbiddenException(
-        'Security Block: You do not have privilege permissions to edit this asset resource.',
+        'Security Block: You do not have privilege permissions to edit this resource.',
       );
     }
 
@@ -173,8 +194,29 @@ export class SpecificbequestsService {
       itemCategory,
       itemName,
       fullDescription,
-      ...scalarUpdates
+      estimatedValue,
+      locationStorage,
+      serialReference,
     } = dto;
+
+    const folder = 'leads';
+    const newUploadedFiles: Array<{
+      name: string;
+      type: string;
+      path: string;
+    }> = [];
+
+    if (files && files.length > 0) {
+      for (const file of files) {
+        const fileName = `${Date.now()}-${file.originalname.replace(/\s+/g, '_')}`;
+        await TajulStorage.put(`${folder}/${fileName}`, file.buffer);
+        newUploadedFiles.push({
+          name: file.originalname,
+          type: file.mimetype,
+          path: fileName,
+        });
+      }
+    }
 
     try {
       return await this.prisma.$transaction(async (tx) => {
@@ -186,23 +228,44 @@ export class SpecificbequestsService {
             throw new BadRequestException(
               'The newly assigned beneficiary does not exist.',
             );
+
+          const currentWillId = willId || currentBequest.willId;
+          if (beneficiaryExists.willId !== currentWillId) {
+            throw new BadRequestException(
+              'Security Alert: The selected beneficiary does not belong to the provided Will scope.',
+            );
+          }
+        }
+
+        const updatePayload: any = {
+          ...(itemCategory && { item_category: itemCategory }),
+          ...(itemName && { item_name: itemName }),
+          ...(fullDescription && { full_description: fullDescription }),
+          ...(beneficiaryId && { beneficiary_id: beneficiaryId }),
+          ...(willId && { willId: willId }),
+          ...(estimatedValue !== undefined && {
+            estimated_value: Number(estimatedValue),
+          }),
+          ...(locationStorage !== undefined && {
+            location_storage: locationStorage,
+          }),
+          ...(serialReference !== undefined && {
+            serial_reference: serialReference,
+          }),
+        };
+
+        if (newAttachmentIds || newUploadedFiles.length > 0) {
+          updatePayload.attachments = {
+            ...(newAttachmentIds && {
+              set: newAttachmentIds.map((attId) => ({ id: attId })),
+            }),
+            ...(newUploadedFiles.length > 0 && { create: newUploadedFiles }),
+          };
         }
 
         const updatedData = await tx.specificBequest.update({
           where: { id },
-          data: {
-            ...scalarUpdates,
-            item_category: itemCategory,
-            item_name: itemName,
-            full_description: fullDescription,
-            beneficiary_id: beneficiaryId,
-            attachments: newAttachmentIds
-              ? {
-                  set: [],
-                  connect: newAttachmentIds.map((attId) => ({ id: attId })),
-                }
-              : undefined,
-          },
+          data: updatePayload,
           include: {
             attachments: true,
             beneficiary: true,
@@ -224,32 +287,43 @@ export class SpecificbequestsService {
     }
   }
 
-  async deleteBequestTransaction(id: string, requestUserId: string) {
-    const currentBequest = await this.getBequestById(id);
+  // Helper: Get Request Base ID
+  async getBequestById(id: string) {
+    const bequest = await this.prisma.specificBequest.findUnique({
+      where: { id },
+    });
+    if (!bequest) {
+      throw new NotFoundException(
+        `Specific Bequest record with ID '${id}' was not found.`,
+      );
+    }
+    return {
+      status: 'success',
+      statusCode: 200,
+      data: bequest,
+    };
+  }
 
-    if (
-      currentBequest.agent_id !== requestUserId &&
-      currentBequest.client_id !== requestUserId
-    ) {
+  async deleteBequest(id: string, requestUserId: string) {
+    const result = await this.getBequestById(id);
+    const currentBequest = result.data;
+
+    if (currentBequest.agent_id !== requestUserId) {
       throw new ForbiddenException(
-        'Security Block: You do not possess structural ownership to drop this record.',
+        'Security Block: You do not have privilege permissions to delete this resource.',
       );
     }
 
-    try {
-      await this.prisma.specificBequest.delete({
-        where: { id },
-      });
+    await this.prisma.specificBequest.delete({
+      where: { id },
+    });
 
-      return {
-        status: 'success',
-        statusCode: 200,
-        message: `Specific Bequest asset '${currentBequest.item_name}' was successfully wiped from the cluster matrix.`,
-      };
-    } catch (err) {
-      throw new InternalServerErrorException(
-        `Wiping sequence encountered an internal error node: ${err.message}`,
-      );
-    }
+    return {
+      status: 'success',
+      statusCode: 200,
+      message: 'Specific bequest deleted successfully.',
+    };
   }
 }
+
+

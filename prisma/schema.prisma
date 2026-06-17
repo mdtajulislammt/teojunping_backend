@@ -104,6 +104,10 @@ model User {
   willsAsClient         Will[]               @relation("ClientWills")
   assetsAsAgent         Asset[]              @relation("AgentAssets")
   assetsAsClient        Asset[]              @relation("ClientAssets")
+  dependants            Dependant[]          @relation("AgentDependants")
+  beneficiaries         Beneficiary[]        @relation("AgentBeneficiaries")
+  executors             Executor[]           @relation("AgentExecutors")
+  exclusions            Exclusion[]          @relation("AgentExclusions")
 
   @@map("users")
 }
@@ -581,7 +585,11 @@ model Dependant {
 
   will Will @relation(fields: [willId], references: [id], onDelete: Cascade)
 
+  agentId String? @map("agent_id")
+  agent   User?   @relation("AgentDependants", fields: [agentId], references: [id], onDelete: Cascade)
+
   @@index([willId])
+  @@index([agentId])
   @@map("dependants")
 }
 
@@ -602,7 +610,11 @@ model Beneficiary {
   will             Will              @relation(fields: [willId], references: [id], onDelete: Cascade)
   specificBequests SpecificBequest[]
 
+  agentId String? @map("agent_id")
+  agent   User?   @relation("AgentBeneficiaries", fields: [agentId], references: [id], onDelete: Cascade)
+
   @@index([willId])
+  @@index([agentId])
   @@map("beneficiaries")
 }
 
@@ -620,7 +632,11 @@ model Executor {
 
   will Will @relation(fields: [willId], references: [id], onDelete: Cascade)
 
+  agentId String? @map("agent_id")
+  agent   User?   @relation("AgentExecutors", fields: [agentId], references: [id], onDelete: Cascade)
+
   @@index([willId])
+  @@index([agentId])
   @@map("executors")
 }
 
@@ -635,7 +651,11 @@ model Exclusion {
 
   will Will @relation(fields: [willId], references: [id], onDelete: Cascade)
 
+  agentId String? @map("agent_id")
+  agent   User?   @relation("AgentExclusions", fields: [agentId], references: [id], onDelete: Cascade)
+
   @@index([willId])
+  @@index([agentId])
   @@map("exclusions")
 }
 

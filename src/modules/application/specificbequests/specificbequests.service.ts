@@ -105,6 +105,35 @@ export class SpecificbequestsService {
     }
   }
 
+  async getBeneficiariesSelectList(agentId?: string) {
+    try {
+      const selectList = await this.prisma.beneficiary.findMany({
+        where: {
+          ...(agentId && { agentId: agentId }),
+        },
+        select: {
+          id: true,
+          fullName: true,
+        },
+        orderBy: {
+          fullName: 'asc',
+        },
+      });
+
+      return {
+        status: 'success',
+        statusCode: 200,
+        message:
+          'Optimized beneficiary directory fetched for select component.',
+        payload: selectList,
+      };
+    } catch (err) {
+      throw new InternalServerErrorException(
+        `Database query engine failed to stream target select package: ${err.message}`,
+      );
+    }
+  }
+
   //get
   async getAllSpecificBequests(clientId: string, agentId: string) {
     const specificBequests = await this.prisma.specificBequest.findMany({

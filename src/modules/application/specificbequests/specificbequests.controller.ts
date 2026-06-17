@@ -17,7 +17,7 @@ import {
 import { SpecificbequestsService } from './specificbequests.service';
 import { CreateSpecificbequestDto } from './dto/create-specificbequest.dto';
 import { UpdateSpecificbequestDto } from './dto/update-specificbequest.dto';
-import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiBearerAuth, ApiConsumes } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiBearerAuth, ApiConsumes, ApiQuery } from '@nestjs/swagger';
 import { JwtAuthGuard } from 'src/modules/auth/guards/jwt-auth.guard';
 import { AnyFilesInterceptor } from '@nestjs/platform-express';
 
@@ -42,6 +42,18 @@ export class SpecificbequestsController {
   ) {
     const agentId = req.user.userId;
     return this.specificbequestsService.createSpecificbequest(clientId, agentId, dto, files);
+  }
+
+  // --- Optimized Selection List for Dropdowns ---
+  @Get('beneficiaries-list')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ 
+    summary: 'Get highly optimized list of beneficiaries containing only id and full name for dropdowns' 
+  })
+  @ApiResponse({ status: 200, description: 'Optimized array retrieved successfully.' })
+  async getBeneficiariesSelectList(@Req() req: any,) {
+    const agentId = req.user.userId;
+    return this.specificbequestsService.getBeneficiariesSelectList(agentId );
   }
 
   //get all 

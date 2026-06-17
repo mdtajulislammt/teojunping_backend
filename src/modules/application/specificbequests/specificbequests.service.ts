@@ -22,7 +22,7 @@ export class SpecificbequestsService {
     dto: CreateSpecificbequestDto,
     files: Express.Multer.File[],
   ) {
-    const { beneficiaryId, willId, ...coreBequestData } = dto;
+    const { beneficiaryId, ...coreBequestData } = dto;
     const folder = 'leads';
     const uploadedAttachments: Array<{
       name: string;
@@ -57,12 +57,6 @@ export class SpecificbequestsService {
         if (!agentUser)
           throw new BadRequestException(`Acting Agent '${agentId}' not found.`);
 
-        const targetWill = await tx.will.findUnique({ where: { id: willId } });
-        if (!targetWill)
-          throw new BadRequestException(
-            `Target Will record '${willId}' not found.`,
-          );
-
         const targetBeneficiary = await tx.beneficiary.findUnique({
           where: { id: beneficiaryId },
         });
@@ -70,12 +64,6 @@ export class SpecificbequestsService {
           throw new BadRequestException(
             `Designated Beneficiary '${beneficiaryId}' not found.`,
           );
-
-        if (targetBeneficiary.willId !== willId) {
-          throw new BadRequestException(
-            'Security Alert: The selected beneficiary does not belong to the provided Will scope.',
-          );
-        }
 
         const newBequest = await tx.specificBequest.create({
           data: {
@@ -88,7 +76,6 @@ export class SpecificbequestsService {
             agent_id: agentId,
             client_id: clientId,
             beneficiary_id: beneficiaryId,
-            willId: willId,
             attachments:
               uploadedAttachments.length > 0
                 ? {
@@ -190,7 +177,6 @@ export class SpecificbequestsService {
     const {
       newAttachmentIds,
       beneficiaryId,
-      willId,
       itemCategory,
       itemName,
       fullDescription,
@@ -228,13 +214,6 @@ export class SpecificbequestsService {
             throw new BadRequestException(
               'The newly assigned beneficiary does not exist.',
             );
-
-          const currentWillId = willId || currentBequest.willId;
-          if (beneficiaryExists.willId !== currentWillId) {
-            throw new BadRequestException(
-              'Security Alert: The selected beneficiary does not belong to the provided Will scope.',
-            );
-          }
         }
 
         const updatePayload: any = {
@@ -242,7 +221,6 @@ export class SpecificbequestsService {
           ...(itemName && { item_name: itemName }),
           ...(fullDescription && { full_description: fullDescription }),
           ...(beneficiaryId && { beneficiary_id: beneficiaryId }),
-          ...(willId && { willId: willId }),
           ...(estimatedValue !== undefined && {
             estimated_value: Number(estimatedValue),
           }),
@@ -325,5 +303,3 @@ export class SpecificbequestsService {
     };
   }
 }
-
-

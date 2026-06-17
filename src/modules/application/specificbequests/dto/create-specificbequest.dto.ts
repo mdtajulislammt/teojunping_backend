@@ -5,13 +5,6 @@ import { IsString, IsEnum, IsOptional, IsNumber, IsNotEmpty, Min } from 'class-v
 import { ItemCategory } from 'prisma/generated/client';
 
 export class CreateSpecificbequestDto {
-  @ApiProperty({
-    example: 'cmq4roxd10000lgtzf83oj010',
-    description: 'The UUID of the parent Will',
-  })
-  @IsString()
-  @IsNotEmpty()
-  willId: string;
 
   @ApiProperty({
     enum: ItemCategory,

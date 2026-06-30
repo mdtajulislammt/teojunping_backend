@@ -8,7 +8,7 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { CreateAssetDto, CreateBulkAssetDto } from './dto/create-asste.dto';
-import { AssetType } from '@prisma-client';
+import { AssetType } from '@prisma/client';
 import { UpdateAssteDto } from './dto/update-asste.dto';
 
 @Injectable()

@@ -2,7 +2,7 @@ export class CreateAssteDto {}
 
 // src/modules/application/asset/dto/create-asset.dto.ts
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { AssetType } from '@prisma-client';
+import { AssetType } from '@prisma/client';
 import { Type } from 'class-transformer';
 import { IsString, IsEnum, IsOptional, IsNumber, IsNotEmpty, Min, IsArray, ValidateNested } from 'class-validator';
 

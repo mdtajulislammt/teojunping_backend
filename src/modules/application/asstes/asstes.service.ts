@@ -76,6 +76,7 @@ export class AssetService {
     }
   }
 
+  
   // ২. GET ALL ASSETS (With Filtering)
   async getAllAssets(clientId?: string, type?: string) {
     const assets = await this.prisma.asset.findMany({

@@ -1,5 +1,5 @@
 generator client {
-  provider = "prisma-client"
+  provider = "prisma-client-js"
   output   = "./generated"
 }
 
@@ -696,7 +696,7 @@ model SpecificBequest {
   location_storage String?       @map("location_storage") @db.VarChar(255)
   serial_reference String?       @map("serial_reference") @db.VarChar(100)
   attachments      Attachment[]  @relation("SpecificBequestAttachments")
-  beneficiary_id   String        @map("beneficiary_id")
+  beneficiary_id   String?       @map("beneficiary_id")
 
   created_at DateTime @default(now()) @map("created_at")
   updated_at DateTime @updatedAt @map("updated_at")

@@ -8,7 +8,6 @@ import appConfig from '../../../config/app.config';
 import { PrismaService } from '../../../prisma/prisma.service';
 import { Role } from '../../guard/role/role.enum';
 import { ArrayHelper } from '../../helper/array.helper';
-import { User } from 'prisma/generated/browser';
 
 @Injectable()
 export class UserRepository {

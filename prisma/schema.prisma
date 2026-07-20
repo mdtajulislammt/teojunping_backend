@@ -108,6 +108,8 @@ model User {
   beneficiaries         Beneficiary[]        @relation("AgentBeneficiaries")
   executors             Executor[]           @relation("AgentExecutors")
   exclusions            Exclusion[]          @relation("AgentExclusions")
+  AgentAppointments     Appointment[]        @relation("AgentAppointments")
+  ClientAppointments    Appointment[]        @relation("ClientAppointments")
 
   @@map("users")
 }
@@ -748,4 +750,54 @@ model Asset {
   @@index([agent_id])
   @@index([asset_type])
   @@map("assets")
+}
+
+enum AppointmentStatus {
+  PENDING
+  CONFIRMED
+  COMPLETED
+  CANCELLED
+
+  @@map("appointment_status")
+}
+
+enum MeetingFormat {
+  INITIAL_CONSULTATION
+  ASSET_DISCUSSION
+  WILL_WRITING
+  SIGN_OFF
+
+  @@map("meeting_format")
+}
+
+enum TypeFormat {
+  PHONE_CALL
+  ZOOM_VIDEO_CALL
+
+  @@map("type_format")
+}
+
+model Appointment {
+  id              String            @id @default(uuid())
+  clientId        String            @map("client_id")
+  agentId         String            @map("agent_id")
+  appointmentType MeetingFormat     @default(INITIAL_CONSULTATION) @map("appointment_type")
+  meetingFormat   TypeFormat        @default(ZOOM_VIDEO_CALL) @map("meeting_format")
+  status          AppointmentStatus @default(PENDING)
+  scheduledAt     DateTime          @map("scheduled_at")
+  durationMinutes Int               @default(45) @map("duration_minutes")
+  notes           String?           @db.Text
+  zoomLink        String?           @map("zoom_link")
+  createdAt       DateTime          @default(now()) @map("created_at")
+  updatedAt       DateTime          @updatedAt @map("updated_at")
+
+  // Relations (Assuming you have User/Client/Agent models configured)
+  agent  User @relation("AgentAppointments", fields: [agentId], references: [id], onDelete: Cascade)
+  client User @relation("ClientAppointments", fields: [clientId], references: [id], onDelete: Cascade)
+
+  @@index([clientId])
+  @@index([agentId])
+  @@index([status])
+  @@index([scheduledAt])
+  @@map("appointments")
 }

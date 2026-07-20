@@ -10,6 +10,7 @@ import { LivekitModule } from 'src/modules/application/live/livekit/livekit.modu
 import { WillModule } from './will/will.module';
 import { SpecificbequestsModule } from './specificbequests/specificbequests.module';
 import { AsstesModule } from './asstes/asstes.module';
+import { AppoinmentModule } from './appoinment/appoinment.module';
 
 @Module({
   imports: [
@@ -24,6 +25,7 @@ import { AsstesModule } from './asstes/asstes.module';
     WillModule,
     SpecificbequestsModule,
     AsstesModule,
+    AppoinmentModule,
   ],
 })
 export class ApplicationModule {}

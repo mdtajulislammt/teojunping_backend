@@ -4,16 +4,26 @@ import { CreateAppointmentDto } from './dto/create-appoinment.dto';
 import { UpdateAppointmentStatusDto } from './dto/update-appoinment.dto';
 import { Appointment, AppointmentStatus } from 'prisma/generated/client';
 
+export interface CreateAppointmentResponse {
+  success: boolean;
+  message: string;
+  appointment: Appointment;
+}
+
 @Injectable()
 export class AppointmentsService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async create(clientId: string, dto: CreateAppointmentDto): Promise<Appointment> {
-    // Client-initiated appointments dynamically start at PENDING status
-    return this.prisma.appointment.create({
+  async create(
+    clientId: string,
+    agentId: string,
+    dto: CreateAppointmentDto,
+  ): Promise<CreateAppointmentResponse> {
+    // 1. Prisma operation MUST be awaited
+    const appointment_post = await this.prisma.appointment.create({
       data: {
         clientId: clientId,
-        agentId: dto.agent_id,
+        agentId: agentId,
         appointmentType: dto.appointment_type,
         meetingFormat: dto.meeting_format,
         scheduledAt: new Date(dto.scheduled_at),
@@ -22,12 +32,19 @@ export class AppointmentsService {
         status: AppointmentStatus.PENDING,
       },
     });
+
+    // 2. Return payload strictly matches Promise<CreateAppointmentResponse>
+    return {
+      success: true,
+      message: 'Appointment booked successfully',
+      appointment: appointment_post,
+    };
   }
 
   async updateStatus(
     appointmentId: string, 
     agentId: string, 
-    dto: UpdateAppointmentStatusDto
+    dto: UpdateAppointmentStatusDto,
   ): Promise<Appointment> {
     const appointment = await this.prisma.appointment.findUnique({
       where: { id: appointmentId },
@@ -41,7 +58,7 @@ export class AppointmentsService {
       throw new BadRequestException('You are not authorized to manage this appointment');
     }
 
-    // Business Logic Validation: Confirmed hole Zoom link tracking logical binding
+    // Business Logic Validation: Confirmed status hole Zoom link validation check
     if (dto.status === AppointmentStatus.CONFIRMED && !dto.zoom_link) {
       throw new BadRequestException('Zoom link is required to confirm the appointment');
     }
@@ -59,7 +76,6 @@ export class AppointmentsService {
     return this.prisma.appointment.findMany({
       where: { agentId: agentId },
       orderBy: { scheduledAt: 'desc' },
-      
     });
   }
 

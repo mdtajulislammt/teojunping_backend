@@ -58,20 +58,26 @@ async function bootstrap() {
     new PrismaExceptionFilter(),
   );
 
-  // storage setup
-  TajulStorage.config({
-    driver: 'local',
-    connection: {
-      rootUrl: appConfig().storageUrl.rootUrl,
-      publicUrl: appConfig().storageUrl.rootUrlPublic,
-      awsBucket: appConfig().fileSystems.s3.bucket,
-      awsAccessKeyId: appConfig().fileSystems.s3.key,
-      awsSecretAccessKey: appConfig().fileSystems.s3.secret,
-      awsDefaultRegion: appConfig().fileSystems.s3.region,
-      awsEndpoint: appConfig().fileSystems.s3.endpoint,
-      minio: true,
-    },
-  });
+  // storage setup (Only initializes if AWS credentials exist)
+  const awsKey = appConfig().fileSystems.s3.key;
+  if (awsKey) {
+    TajulStorage.config({
+      driver: 'local',
+      connection: {
+        rootUrl: appConfig().storageUrl.rootUrl,
+        publicUrl: appConfig().storageUrl.rootUrlPublic,
+        awsBucket: appConfig().fileSystems.s3.bucket,
+        awsAccessKeyId: awsKey,
+        awsSecretAccessKey: appConfig().fileSystems.s3.secret,
+        awsDefaultRegion: appConfig().fileSystems.s3.region,
+        awsEndpoint: appConfig().fileSystems.s3.endpoint,
+        minio: true,
+      },
+    });
+    console.log('📦 TajulStorage configured with S3/MinIO');
+  } else {
+    console.log('ℹ️ TajulStorage skipped (No AWS Keys found in .env)');
+  }
 
   // Swagger setup
   const config = new DocumentBuilder()
@@ -147,7 +153,7 @@ async function bootstrap() {
     },
   });
 
-  const port = process.env.PORT ?? 4000;
+  const port = process.env.PORT ?? 6005;
 
   // Port Conflict & Auto Recovery Mechanism
   try {
@@ -174,4 +180,7 @@ async function bootstrap() {
     }
   }
 }
-bootstrap();
+bootstrap().catch((err) => {
+  console.error('❌ Bootstrap failed:', err);
+  process.exit(1);
+});

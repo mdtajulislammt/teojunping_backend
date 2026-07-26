@@ -1,10 +1,8 @@
 // external imports
 import { MiddlewareConsumer, Module } from '@nestjs/common';
-// import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
-// import { APP_GUARD } from '@nestjs/core';
 import { RedisModule } from '@nestjs-modules/ioredis';
 import { BullModule } from '@nestjs/bullmq';
-import { ConfigModule } from '@nestjs/config';
+import { ConfigModule, ConfigService } from '@nestjs/config';
 
 // internal imports
 import { AppController } from './app.controller';
@@ -13,7 +11,6 @@ import { LoggerMiddleware } from './common/middleware/logger.middleware';
 import appConfig from './config/app.config';
 import { AuthModule } from './modules/auth/auth.module';
 import { PrismaModule } from './prisma/prisma.module';
-// import { ThrottlerBehindProxyGuard } from './common/guard/throttler-behind-proxy.guard';
 import { AbilityModule } from './ability/ability.module';
 
 import { RepositoryModule } from './common/repository/repository.module';
@@ -31,44 +28,41 @@ import { PrometheusModule } from './prometheus/prometheus.module';
       isGlobal: true,
       load: [appConfig],
     }),
-    BullModule.forRoot({
-      connection: {
-        host: appConfig().redis.host,
-        password: appConfig().redis.password,
-        port: +appConfig().redis.port,
-      },
-      // redis: {
-      //   host: appConfig().redis.host,
-      //   password: appConfig().redis.password,
-      //   port: +appConfig().redis.port,
-      // },
+
+    // 🚀 BullMQ Async Config
+    BullModule.forRootAsync({
+      imports: [ConfigModule],
+      useFactory: (configService: ConfigService) => ({
+        connection: {
+          host: configService.get<string>('redis.host'),
+          password: configService.get<string>('redis.password'),
+          port: Number(configService.get<number>('redis.port')),
+          maxRetriesPerRequest: null,
+          enableReadyCheck: false,
+        },
+      }),
+      inject: [ConfigService],
     }),
-    RedisModule.forRoot({
-      type: 'single',
-      options: {
-        host: appConfig().redis.host,
-        password: appConfig().redis.password,
-        port: +appConfig().redis.port,
-      },
+
+    // 🚀 IoRedis Async Config
+    RedisModule.forRootAsync({
+      imports: [ConfigModule],
+      useFactory: (configService: ConfigService) => ({
+        type: 'single',
+        options: {
+          host: configService.get<string>('redis.host'),
+          password: configService.get<string>('redis.password'),
+          port: Number(configService.get<number>('redis.port')),
+          maxRetriesPerRequest: 3,
+          retryStrategy: (times) => {
+            if (times > 3) return null;
+            return Math.min(times * 200, 1000);
+          },
+        },
+      }),
+      inject: [ConfigService],
     }),
-    // disabling throttling for dev
-    // ThrottlerModule.forRoot([
-    //   {
-    //     name: 'short',
-    //     ttl: 1000,
-    //     limit: 3,
-    //   },
-    //   {
-    //     name: 'medium',
-    //     ttl: 10000,
-    //     limit: 20,
-    //   },
-    //   {
-    //     name: 'long',
-    //     ttl: 60000,
-    //     limit: 100,
-    //   },
-    // ]),
+
     // General modules
     PrismaModule,
     RepositoryModule,
@@ -83,18 +77,7 @@ import { PrometheusModule } from './prometheus/prometheus.module';
     RequestModule,
   ],
   controllers: [AppController],
-  providers: [
-    // disabling throttling for dev
-    // {
-    //   provide: APP_GUARD,
-    //   useClass: ThrottlerGuard,
-    // },
-    // disbling throttling for dev {
-    //   provide: APP_GUARD,
-    //   useClass: ThrottlerBehindProxyGuard,
-    // },
-    AppService,
-  ],
+  providers: [AppService],
 })
 export class AppModule {
   configure(consumer: MiddlewareConsumer) {

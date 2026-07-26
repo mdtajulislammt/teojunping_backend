@@ -8,20 +8,37 @@ import { PrismaService } from 'src/prisma/prisma.service';
 
 @Injectable()
 export class NotificationRepository implements OnModuleInit {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(private readonly prisma: PrismaService) { }
 
   onModuleInit() {
     if (!admin.apps.length) {
+      const projectId = process.env.FIREBASE_PROJECT_ID;
+      const clientEmail = process.env.FIREBASE_CLIENT_EMAIL;
+      const privateKey = process.env.FIREBASE_PRIVATE_KEY;
+
+      const isValidCredentials =
+        projectId &&
+        clientEmail &&
+        privateKey &&
+        privateKey.includes('BEGIN PRIVATE KEY');
+
+      if (!isValidCredentials) {
+        console.warn(
+          '⚠️ Firebase skipped: Missing or invalid credentials in .env file.',
+        );
+        return;
+      }
+
       try {
         admin.initializeApp({
           credential: admin.credential.cert({
-            projectId: process.env.FIREBASE_PROJECT_ID,
-            clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
-            privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n'),
+            projectId,
+            clientEmail,
+            privateKey: privateKey.replace(/\\n/g, '\n'),
           }),
         });
         console.log('🚀 Firebase Admin Initialized Successfully');
-      } catch (error) {
+      } catch (error: any) {
         console.error('❌ Firebase Initialization Error:', error.message);
       }
     }

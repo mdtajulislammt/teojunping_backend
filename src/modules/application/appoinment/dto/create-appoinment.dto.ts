@@ -1,12 +1,8 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsEnum, IsInt, IsNotEmpty, IsOptional, IsString, IsUUID, Min } from 'class-validator';
+import { IsEnum, IsInt, IsNotEmpty, IsOptional, IsString, Min } from 'class-validator';
 import { MeetingFormat, TypeFormat } from 'prisma/generated/client';
 
 export class CreateAppointmentDto {
-  @ApiProperty({ example: 'a1b2c3d4-e5f6-7a8b-9c0d-1e2f3a4b5c6d', description: 'ID of the agent selected by the client' })
-  @IsUUID()
-  @IsNotEmpty()
-  agent_id: string;
 
   @ApiProperty({ enum: MeetingFormat, example: MeetingFormat.INITIAL_CONSULTATION })
   @IsEnum(MeetingFormat)

@@ -5,6 +5,7 @@ import {
   Patch,
   Param,
   Get,
+  Query,
   UseGuards,
   Req,
   BadRequestException,
@@ -14,11 +15,9 @@ import {
   ApiOperation,
   ApiResponse,
   ApiBearerAuth,
+  ApiBody,
 } from '@nestjs/swagger';
-import {
-  AppointmentsService,
-  CreateAppointmentResponse,
-} from './appoinment.service';
+import { AppointmentsService } from './appoinment.service';
 import { CreateAppointmentDto } from './dto/create-appoinment.dto';
 import { UpdateAppointmentStatusDto } from './dto/update-appoinment.dto';
 import { Appointment } from 'prisma/generated/client';
@@ -27,6 +26,15 @@ import { Roles } from '../../../common/guard/role/roles.decorator';
 import { RolesGuard } from '../../../common/guard/role/roles.guard';
 import { Role } from '../../../common/guard/role/role.enum';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
+import {
+  CreateAppointmentResponse,
+  DashboardMetricsResponse,
+  PaginatedAppointmentListResponse,
+} from './dto/appointment-response.interface';
+import {
+  GetAppointmentsQueryDto,
+  RescheduleAppointmentDto,
+} from './dto/get-appointments-query.dto';
 
 @ApiTags('Appointments')
 @ApiBearerAuth()
@@ -41,10 +49,6 @@ export class AppointmentsController {
   @Post('client/book')
   @Roles(Role.CLIENT)
   @ApiOperation({ summary: 'Client books a new pending appointment' })
-  @ApiResponse({
-    status: 201,
-    description: 'Appointment requested successfully.',
-  })
   async clientBook(
     @Req() req: any,
     @Body() createAppointmentDto: CreateAppointmentDto,
@@ -69,15 +73,46 @@ export class AppointmentsController {
     );
   }
 
+  @Get('agent/metrics')
+  @Roles(Role.AGENT)
+  @ApiOperation({ summary: 'Get dashboard KPI metrics for logged-in Agent' })
+  async getAgentMetrics(@Req() req: any): Promise<DashboardMetricsResponse> {
+    const agentId = req.user.userId;
+    return this.appointmentsService.getAgentMetrics(agentId);
+  }
+
+  @Get('agent/today')
+  @Roles(Role.AGENT)
+  @ApiOperation({ summary: "Get today's schedule for logged-in Agent" })
+  async getTodaySchedule(@Req() req: any) {
+    const agentId = req.user.userId;
+    return this.appointmentsService.getTodaySchedule(agentId);
+  }
+
+  @Get('agent/list')
+  @Roles(Role.AGENT)
+  @ApiOperation({ summary: 'Get filtered, paginated appointments for Agent' })
+  async getAgentAppointments(
+    @Req() req: any,
+    @Query() query: GetAppointmentsQueryDto,
+  ): Promise<PaginatedAppointmentListResponse> {
+    const agentId = req.user.userId;
+    return this.appointmentsService.findAllForAgent(agentId, query);
+  }
+  @Get('client/list')
+  @Roles(Role.CLIENT)
+  @ApiOperation({ summary: 'Get filtered, paginated appointments for client' })
+  async getClientAppointments(
+    @Req() req: any,
+    @Query() query: GetAppointmentsQueryDto,
+  ): Promise<PaginatedAppointmentListResponse> {
+    const clientId = req.user.userId;
+    return this.appointmentsService.findAllForClient(clientId, query);
+  }
+
   @Patch('agent/:id/status')
   @Roles(Role.AGENT)
-  @ApiOperation({
-    summary: 'Agent confirms, completes, or cancels an appointment',
-  })
-  @ApiResponse({
-    status: 200,
-    description: 'Appointment status updated successfully.',
-  })
+  @ApiOperation({ summary: 'Agent updates appointment status' })
   async agentUpdateStatus(
     @Param('id') appointmentId: string,
     @Req() req: any,
@@ -91,19 +126,16 @@ export class AppointmentsController {
     );
   }
 
-  @Get('agent/list')
+  @Patch('agent/:id/reschedule')
   @Roles(Role.AGENT)
-  @ApiOperation({ summary: 'Get all appointments for the logged-in Agent' })
-  async getAgentAppointments(@Req() req: any): Promise<Appointment[]> {
+  @ApiOperation({ summary: 'Agent reschedules an appointment' })
+  @ApiBody({ type: RescheduleAppointmentDto })
+  async agentReschedule(
+    @Param('id') appointmentId: string,
+    @Req() req: any,
+    @Body() dto: RescheduleAppointmentDto,
+  ): Promise<Appointment> {
     const agentId = req.user.userId;
-    return this.appointmentsService.findAllForAgent(agentId);
-  }
-
-  @Get('client/list')
-  @Roles(Role.CLIENT)
-  @ApiOperation({ summary: 'Get all appointments for the logged-in Client' })
-  async getClientAppointments(@Req() req: any): Promise<Appointment[]> {
-    const clientId = req.user.userId;
-    return this.appointmentsService.findAllForClient(clientId);
+    return this.appointmentsService.reschedule(appointmentId, agentId, dto);
   }
 }

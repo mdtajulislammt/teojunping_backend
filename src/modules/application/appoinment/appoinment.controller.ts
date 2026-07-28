@@ -32,6 +32,7 @@ import {
   PaginatedAppointmentListResponse,
 } from './dto/appointment-response.interface';
 import {
+  GetAdminAppointmentsQueryDto,
   GetAppointmentsQueryDto,
   RescheduleAppointmentDto,
 } from './dto/get-appointments-query.dto';
@@ -87,6 +88,15 @@ export class AppointmentsController {
   async getTodaySchedule(@Req() req: any) {
     const agentId = req.user.userId;
     return this.appointmentsService.getTodaySchedule(agentId);
+  }
+
+  @Get('admin/list')
+  @Roles(Role.ADMIN)
+  @ApiOperation({ summary: 'Admin gets platform-wide appointments with search and filters' })
+  async getAdminAppointments(
+    @Query() query: GetAdminAppointmentsQueryDto,
+  ): Promise<PaginatedAppointmentListResponse> {
+    return this.appointmentsService.findAllForAdmin(query);
   }
 
   @Get('agent/list')

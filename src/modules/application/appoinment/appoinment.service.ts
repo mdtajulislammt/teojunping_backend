@@ -6,10 +6,22 @@ import {
 import { PrismaService } from 'src/prisma/prisma.service';
 import { CreateAppointmentDto } from './dto/create-appoinment.dto';
 import { UpdateAppointmentStatusDto } from './dto/update-appoinment.dto';
-import { Appointment, AppointmentStatus, Prisma } from 'prisma/generated/client';
-import { CreateAppointmentResponse, DashboardMetricsResponse, PaginatedAppointmentListResponse } from './dto/appointment-response.interface';
-import { GetAppointmentsQueryDto, RescheduleAppointmentDto } from './dto/get-appointments-query.dto';
-
+import {
+  Appointment,
+  AppointmentStatus,
+  Prisma,
+} from 'prisma/generated/client';
+import {
+  CreateAppointmentResponse,
+  DashboardMetricsResponse,
+  PaginatedAppointmentListResponse,
+} from './dto/appointment-response.interface';
+import {
+  DateRangeFilter,
+  GetAdminAppointmentsQueryDto,
+  GetAppointmentsQueryDto,
+  RescheduleAppointmentDto,
+} from './dto/get-appointments-query.dto';
 
 @Injectable()
 export class AppointmentsService {
@@ -42,7 +54,7 @@ export class AppointmentsService {
 
   async getAgentMetrics(agentId: string): Promise<DashboardMetricsResponse> {
     const now = new Date();
-    
+
     // Date Ranges
     const startOfWeek = new Date(now);
     startOfWeek.setDate(now.getDate() - now.getDay());
@@ -73,13 +85,19 @@ export class AppointmentsService {
         where: { agentId, scheduledAt: { gte: startOfWeek } },
       }),
       this.prisma.appointment.count({
-        where: { agentId, scheduledAt: { gte: startOfLastWeek, lt: startOfWeek } },
+        where: {
+          agentId,
+          scheduledAt: { gte: startOfLastWeek, lt: startOfWeek },
+        },
       }),
       this.prisma.appointment.count({
         where: { agentId, scheduledAt: { gte: startOfMonth } },
       }),
       this.prisma.appointment.count({
-        where: { agentId, scheduledAt: { gte: startOfLastMonth, lt: startOfMonth } },
+        where: {
+          agentId,
+          scheduledAt: { gte: startOfLastMonth, lt: startOfMonth },
+        },
       }),
       this.prisma.appointment.count({
         where: { agentId, status: AppointmentStatus.PENDING },
@@ -95,10 +113,13 @@ export class AppointmentsService {
       }),
     ]);
 
-    const statusMap = weeklyBreakdown.reduce((acc, curr) => {
-      acc[curr.status] = curr._count.status;
-      return acc;
-    }, {} as Record<string, number>);
+    const statusMap = weeklyBreakdown.reduce(
+      (acc, curr) => {
+        acc[curr.status] = curr._count.status;
+        return acc;
+      },
+      {} as Record<string, number>,
+    );
 
     const nextAppointment = todayAppointments.find((a) => a.scheduledAt > now);
 
@@ -153,6 +174,97 @@ export class AppointmentsService {
     return {
       success: true,
       data: appointments,
+    };
+  }
+
+  async findAllForAdmin(
+    query: GetAdminAppointmentsQueryDto,
+  ): Promise<PaginatedAppointmentListResponse> {
+    const { page = 1, limit = 8, search, status, agentId, dateRange } = query;
+    const skip = (page - 1) * limit;
+
+    // Build Prisma Where Clause
+    const where: Prisma.AppointmentWhereInput = {};
+
+    // 1. Filter by Status
+    if (status) {
+      where.status = status;
+    }
+
+    // 2. Filter by Specific Agent
+    if (agentId) {
+      where.agentId = agentId;
+    }
+
+    // 3. Search (Client or Agent Name/Email)
+    if (search) {
+      where.OR = [
+        {
+          client: {
+            OR: [
+              { name: { contains: search, mode: 'insensitive' } },
+              { email: { contains: search, mode: 'insensitive' } },
+            ],
+          },
+        },
+        {
+          agent: {
+            OR: [
+              { name: { contains: search, mode: 'insensitive' } },
+              { email: { contains: search, mode: 'insensitive' } },
+            ],
+          },
+        },
+      ];
+    }
+
+    // 4. Date Range Filter
+    if (dateRange && dateRange !== DateRangeFilter.ALL) {
+      const now = new Date();
+      if (dateRange === DateRangeFilter.TODAY) {
+        const startOfToday = new Date(now.setHours(0, 0, 0, 0));
+        const endOfToday = new Date(now.setHours(23, 59, 59, 999));
+        where.scheduledAt = { gte: startOfToday, lte: endOfToday };
+      } else if (dateRange === DateRangeFilter.THIS_WEEK) {
+        const startOfWeek = new Date(now);
+        startOfWeek.setDate(now.getDate() - now.getDay());
+        startOfWeek.setHours(0, 0, 0, 0);
+        where.scheduledAt = { gte: startOfWeek };
+      } else if (dateRange === DateRangeFilter.THIS_MONTH) {
+        const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+        where.scheduledAt = { gte: startOfMonth };
+      }
+    }
+
+    // Execute queries in parallel
+    const [total, appointments] = await Promise.all([
+      this.prisma.appointment.count({ where }),
+      this.prisma.appointment.findMany({
+        where,
+        skip,
+        take: limit,
+        include: {
+          client: {
+            select: { id: true, name: true, email: true },
+          },
+          agent: {
+            select: { id: true, name: true, email: true },
+          },
+        },
+        orderBy: { scheduledAt: 'desc' },
+      }),
+    ]);
+
+    return {
+      success: true,
+      message: 'Platform appointments fetched successfully',
+      data: appointments,
+      meta: {
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit),
+      },
     };
   }
 
@@ -266,11 +378,15 @@ export class AppointmentsService {
     }
 
     if (appointment.agentId !== agentId) {
-      throw new BadRequestException('You are not authorized to manage this appointment');
+      throw new BadRequestException(
+        'You are not authorized to manage this appointment',
+      );
     }
 
     if (dto.status === AppointmentStatus.CONFIRMED && !dto.zoom_link) {
-      throw new BadRequestException('Zoom link is required to confirm the appointment');
+      throw new BadRequestException(
+        'Zoom link is required to confirm the appointment',
+      );
     }
 
     return this.prisma.appointment.update({
@@ -296,7 +412,9 @@ export class AppointmentsService {
     }
 
     if (appointment.agentId !== agentId) {
-      throw new BadRequestException('You are not authorized to manage this appointment');
+      throw new BadRequestException(
+        'You are not authorized to manage this appointment',
+      );
     }
 
     return this.prisma.appointment.update({

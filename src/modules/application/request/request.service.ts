@@ -103,7 +103,7 @@ export class RequestService {
         message: 'Request created and volunteers notified',
         data: request,
       };
-    } catch (error) {
+    } catch (error: any) {
       throw new BadRequestException(
         'Failed to create request: ' + error.message,
       );

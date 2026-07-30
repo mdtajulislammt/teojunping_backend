@@ -21,7 +21,7 @@ export class FaqService {
         success: true,
         data: faqs,
       };
-    } catch (error) {
+    } catch (error: any) {
       return {
         success: false,
         message: error.message,
@@ -43,7 +43,7 @@ export class FaqService {
         success: true,
         data: faq,
       };
-    } catch (error) {
+    } catch (error: any) {
       return {
         success: false,
         message: error.message,

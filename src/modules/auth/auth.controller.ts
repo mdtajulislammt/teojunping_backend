@@ -65,7 +65,7 @@ export class AuthController {
       const response = await this.authService.me(user_id);
 
       return response;
-    } catch (error) {
+    } catch (error: any) {
       return {
         success: false,
         message: 'Failed to fetch user details',
@@ -81,7 +81,7 @@ export class AuthController {
   async registerClient(@Body() dto: RegisterClientDto) {
     try {
       return await this.authService.registerClient(dto);
-    } catch (error) {
+    } catch (error: any) {
       throw new HttpException(
         error.message,
         error.status || HttpStatus.INTERNAL_SERVER_ERROR,
@@ -102,7 +102,7 @@ export class AuthController {
   ) {
     try {
       return await this.authService.registerAgent(dto, files);
-    } catch (error) {
+    } catch (error: any) {
       throw new HttpException(
         error.message,
         error.status || HttpStatus.INTERNAL_SERVER_ERROR,
@@ -110,12 +110,11 @@ export class AuthController {
     }
   }
 
-  
   @Post('login')
   @UseGuards(LocalAuthGuard)
   @ApiOperation({ summary: 'User login Success' })
   @ApiBody({ type: LoginUserResDto })
-  @ApiResponse({ status: 200, description: 'Login successful', })
+  @ApiResponse({ status: 200, description: 'Login successful' })
   async login(
     @Req() req: any,
     @Res() res: Response,
@@ -144,7 +143,7 @@ export class AuthController {
       }
 
       return res.status(200).json(response);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Controller Error:', error.message);
       return res.status(500).json({
         success: false,
@@ -180,7 +179,7 @@ export class AuthController {
       const user_id = req.user.userId;
       const response = await this.authService.updateUser(user_id, data, image);
       return response;
-    } catch (error) {
+    } catch (error: any) {
       return {
         success: false,
         message: 'Failed to update user',
@@ -201,7 +200,7 @@ export class AuthController {
         throw new HttpException('Email not provided', HttpStatus.UNAUTHORIZED);
       }
       return await this.authService.forgotPassword(email);
-    } catch (error) {
+    } catch (error: any) {
       return {
         success: false,
         message: 'Something went wrong',
@@ -227,7 +226,7 @@ export class AuthController {
         email: email,
         token: token,
       });
-    } catch (error) {
+    } catch (error: any) {
       return {
         success: false,
         message: 'Failed to verify email',
@@ -246,7 +245,7 @@ export class AuthController {
         throw new HttpException('Email not provided', HttpStatus.UNAUTHORIZED);
       }
       return await this.authService.resendVerificationEmail(email);
-    } catch (error) {
+    } catch (error: any) {
       return {
         success: false,
         message: 'Failed to resend verification email',
@@ -285,7 +284,7 @@ export class AuthController {
         token: token,
         password: password,
       });
-    } catch (error) {
+    } catch (error: any) {
       return {
         success: false,
         message: 'Something went wrong',
@@ -304,7 +303,7 @@ export class AuthController {
         throw new HttpException('Email not provided', HttpStatus.UNAUTHORIZED);
       }
       return await this.authService.resendToken(email);
-    } catch (error) {
+    } catch (error: any) {
       return {
         success: false,
         message: 'Failed to resend password reset token',
@@ -336,7 +335,7 @@ export class AuthController {
         email: email,
         token: token,
       });
-    } catch (error) {
+    } catch (error: any) {
       return {
         success: false,
         message: 'Failed to verify token',
@@ -387,7 +386,7 @@ export class AuthController {
         oldPassword: oldPassword,
         newPassword: newPassword,
       });
-    } catch (error) {
+    } catch (error: any) {
       return {
         success: false,
         message: 'Failed to change password',
@@ -414,7 +413,7 @@ export class AuthController {
       );
 
       return response;
-    } catch (error) {
+    } catch (error: any) {
       return {
         success: false,
         message: error.message,
@@ -431,7 +430,7 @@ export class AuthController {
       const userId = req.user.userId;
       const response = await this.authService.revokeRefreshToken(userId);
       return response;
-    } catch (error) {
+    } catch (error: any) {
       return {
         success: false,
         message: error.message,
@@ -477,7 +476,7 @@ export class AuthController {
         throw new HttpException('Email not provided', HttpStatus.UNAUTHORIZED);
       }
       return await this.authService.requestEmailChange(user_id, email);
-    } catch (error) {
+    } catch (error: any) {
       return {
         success: false,
         message: 'Something went wrong',
@@ -510,7 +509,7 @@ export class AuthController {
         new_email: email,
         token: token,
       });
-    } catch (error) {
+    } catch (error: any) {
       return {
         success: false,
         message: 'Something went wrong',
@@ -529,7 +528,7 @@ export class AuthController {
     try {
       const user_id = req.user.userId;
       return await this.authService.generate2FASecret(user_id);
-    } catch (error) {
+    } catch (error: any) {
       return {
         success: false,
         message: error.message,
@@ -547,7 +546,7 @@ export class AuthController {
       const user_id = req.user.userId;
       const token = data.token;
       return await this.authService.verify2FA(user_id, token);
-    } catch (error) {
+    } catch (error: any) {
       return {
         success: false,
         message: error.message,
@@ -564,7 +563,7 @@ export class AuthController {
     try {
       const user_id = req.user.userId;
       return await this.authService.enable2FA(user_id);
-    } catch (error) {
+    } catch (error: any) {
       return {
         success: false,
         message: error.message,
@@ -581,7 +580,7 @@ export class AuthController {
     try {
       const user_id = req.user.userId;
       return await this.authService.disable2FA(user_id);
-    } catch (error) {
+    } catch (error: any) {
       return {
         success: false,
         message: error.message,

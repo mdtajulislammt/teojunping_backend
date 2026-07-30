@@ -43,7 +43,7 @@ export class PaymentTransactionService {
         success: true,
         data: paymentTransactions,
       };
-    } catch (error) {
+    } catch (error: any) {
       return {
         success: false,
         message: error.message,
@@ -91,7 +91,7 @@ export class PaymentTransactionService {
         success: true,
         data: paymentTransaction,
       };
-    } catch (error) {
+    } catch (error: any) {
       return {
         success: false,
         message: error.message,
@@ -133,7 +133,7 @@ export class PaymentTransactionService {
         success: true,
         message: 'Payment transaction deleted successfully',
       };
-    } catch (error) {
+    } catch (error: any) {
       return {
         success: false,
         message: error.message,

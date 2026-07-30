@@ -33,7 +33,7 @@ export class ContactService {
         success: true,
         message: 'Submitted successfully',
       };
-    } catch (error) {
+    } catch (error: any) {
       return {
         success: false,
         message: error.message,

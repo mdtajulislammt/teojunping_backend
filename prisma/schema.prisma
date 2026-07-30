@@ -1,6 +1,6 @@
 generator client {
   provider = "prisma-client-js"
-  output   = "../src/prisma/generated"
+  // output   = "../src/prisma/generated"
 }
 
 datasource db {
@@ -88,12 +88,9 @@ model User {
   sentNotifications     Notification[]       @relation("notificationSender")
   participants          Participant[]        @relation("participantUser")
   accounts              Account[]
-  comments              Comment[]
   feedbacks_given       Feedback[]           @relation("FeedbackAuthor")
   liveStreams           live_streams[]
   payment_transactions  PaymentTransaction[]
-  postCommunities       PostCommunity[]
-  postLikes             PostLike[]
   created_requests      Request[]            @relation("SeekerRequests")
   accepted_tasks        Request[]            @relation("VolunteerTasks")
   role_users            RoleUser[]
@@ -127,49 +124,6 @@ model Ucode {
   user        User?     @relation(fields: [user_id], references: [id])
 
   @@map("ucodes")
-}
-
-model PostCommunity {
-  id           String     @id @default(uuid())
-  author_id    String
-  title        String?
-  content      String?
-  image_url    String?
-  location_tag String?
-  created_at   DateTime   @default(now())
-  updated_at   DateTime   @updatedAt
-  comments     Comment[]
-  user         User       @relation(fields: [author_id], references: [id])
-  likes        PostLike[]
-
-  @@map("post_communities")
-}
-
-model Comment {
-  id         String        @id @default(uuid())
-  post_id    String
-  author_id  String
-  content    String
-  created_at DateTime      @default(now())
-  parent_id  String?
-  user       User          @relation(fields: [author_id], references: [id])
-  parent     Comment?      @relation("CommentReplies", fields: [parent_id], references: [id])
-  replies    Comment[]     @relation("CommentReplies")
-  post       PostCommunity @relation(fields: [post_id], references: [id], onDelete: Cascade)
-
-  @@map("comments")
-}
-
-model PostLike {
-  id         String        @id @default(uuid())
-  post_id    String
-  user_id    String
-  created_at DateTime      @default(now())
-  post       PostCommunity @relation(fields: [post_id], references: [id], onDelete: Cascade)
-  user       User          @relation(fields: [user_id], references: [id])
-
-  @@unique([post_id, user_id])
-  @@map("post_likes")
 }
 
 model Request {

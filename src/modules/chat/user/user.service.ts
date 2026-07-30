@@ -26,7 +26,7 @@ export class UserService {
         success: true,
         data: users,
       };
-    } catch (error) {
+    } catch (error: any) {
       return {
         success: false,
         message: error.message,

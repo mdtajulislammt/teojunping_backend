@@ -39,7 +39,7 @@ export class GCSAdapter implements IStorage {
       const file = this.bucket.file(key);
       const [exists] = await file.exists();
       return exists;
-    } catch (error) {
+    } catch (error: any) {
       throw error;
     }
   }
@@ -56,7 +56,7 @@ export class GCSAdapter implements IStorage {
         throw new Error(`File ${key} does not exist`);
       }
       return file.createReadStream();
-    } catch (error) {
+    } catch (error: any) {
       throw new Error(`Failed to get object ${key}: ${error}`);
     }
   }
@@ -75,7 +75,7 @@ export class GCSAdapter implements IStorage {
       const [metadata] = await file.getMetadata();
 
       return metadata;
-    } catch (error) {
+    } catch (error: any) {
       throw error;
     }
   }

@@ -12,9 +12,7 @@ import { Pool } from 'pg';
 export interface PrismaService extends PrismaClient {}
 
 @Injectable()
-export class PrismaService
-  implements OnModuleInit, OnModuleDestroy
-{
+export class PrismaService implements OnModuleInit, OnModuleDestroy {
   private readonly logger = new Logger(PrismaService.name);
   private readonly prisma: PrismaClient;
 
@@ -52,7 +50,7 @@ export class PrismaService
     try {
       await this.prisma.$connect();
       this.logger.log('Prisma connected successfully');
-    } catch (error) {
+    } catch (error: any) {
       this.logger.error('Failed to connect to database', error);
       throw error;
     }

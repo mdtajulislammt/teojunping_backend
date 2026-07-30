@@ -37,7 +37,8 @@ export class WithdrawService {
 
     try {
       // Create Stripe Connected Account
-      const connectedAccount = await StripePayment.createConnectedAccount(email);
+      const connectedAccount =
+        await StripePayment.createConnectedAccount(email);
 
       // Save banking_id in user's profile
       await this.prisma.user.update({
@@ -48,13 +49,13 @@ export class WithdrawService {
       });
 
       return {
-         success: true,
-         message: 'Connected account created successfully',
-         data: {
-          accountId: connectedAccount.id
-         }
-        };
-    } catch (error) {
+        success: true,
+        message: 'Connected account created successfully',
+        data: {
+          accountId: connectedAccount.id,
+        },
+      };
+    } catch (error: any) {
       console.error('Connected account error:', error);
       throw new HttpException(
         'Failed to create payout account. Please try again later.',
@@ -70,15 +71,16 @@ export class WithdrawService {
     data: { url: string };
   }> {
     try {
-      const accountLink = await StripePayment.createOnboardingAccountLink(accountId);
+      const accountLink =
+        await StripePayment.createOnboardingAccountLink(accountId);
       return {
         success: true,
         message: 'Onboarding link created successfully',
         data: {
-          url: accountLink.url 
-        }
+          url: accountLink.url,
+        },
       };
-    } catch (error) { 
+    } catch (error: any) {
       console.error('Onboarding link error:', error);
       throw new HttpException(
         'Failed to create onboarding link',
@@ -91,11 +93,9 @@ export class WithdrawService {
   async processWithdraw(
     userId: string,
     withdrawDto: CreateWithdrawDto,
-  ) : 
-  Promise<WithdrawResponse> {
-
+  ): Promise<WithdrawResponse> {
     const { amount, currency = 'usd' } = withdrawDto;
-   
+
     // Find the user
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
@@ -111,7 +111,7 @@ export class WithdrawService {
     }
 
     // Check if user has available balance
-    if (!user.balance|| user.balance.toNumber() <= 0) {
+    if (!user.balance || user.balance.toNumber() <= 0) {
       throw new BadRequestException('Insufficient balance to withdraw');
     }
 
@@ -121,10 +121,7 @@ export class WithdrawService {
     }
 
     // Check if withdraw amount exceeds available balance
-    if (
-      amount > user.balance.toNumber?.() ||
-      amount > Number(user.balance)
-    ) {
+    if (amount > user.balance.toNumber?.() || amount > Number(user.balance)) {
       throw new BadRequestException(
         'Withdraw amount exceeds available balance',
       );
@@ -142,7 +139,7 @@ export class WithdrawService {
       await this.prisma.user.update({
         where: { id: userId },
         data: {
-         balance: {
+          balance: {
             decrement: amount,
           },
         },
@@ -174,10 +171,9 @@ export class WithdrawService {
           status: 'completed',
         },
       };
-    } catch (error) {
-      
+    } catch (error: any) {
       console.error('Withdraw processing error:', error);
-     
+
       await this.prisma.paymentTransaction.create({
         data: {
           user_id: userId,
@@ -201,7 +197,6 @@ export class WithdrawService {
 
   //Check Connected Account Balance
   async checkAccountBalance(userId: string) {
-   
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
       select: { stripe_connect_id: true },
@@ -239,7 +234,7 @@ export class WithdrawService {
           },
         },
       };
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error checking balance:', error);
       throw new HttpException(
         'Failed to check balance',

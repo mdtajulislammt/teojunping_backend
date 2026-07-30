@@ -15,7 +15,7 @@ export class ContactController {
     try {
       const contact = await this.contactService.create(createContactDto);
       return contact;
-    } catch (error) {
+    } catch (error: any) {
       return {
         success: false,
         message: error.message,

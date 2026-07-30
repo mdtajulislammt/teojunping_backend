@@ -78,7 +78,7 @@ export class AuthService {
           message: 'User not found',
         };
       }
-    } catch (error) {
+    } catch (error: any) {
       return {
         success: false,
         message: error.message,
@@ -122,7 +122,7 @@ export class AuthService {
         message: 'Client account created successfully',
         data: client,
       };
-    } catch (error) {
+    } catch (error: any) {
       throw new InternalServerErrorException('Failed to create client account');
     }
   }
@@ -187,7 +187,7 @@ export class AuthService {
         message: 'Agent account registered successfully',
         data: agent,
       };
-    } catch (error) {
+    } catch (error: any) {
       throw new InternalServerErrorException(
         'Failed to register agent account',
       );
@@ -268,7 +268,7 @@ export class AuthService {
         type: user.type,
         fcm_token: user.fcm_token,
       };
-    } catch (error) {
+    } catch (error: any) {
       return {
         success: false,
         message: error.message,
@@ -324,7 +324,7 @@ export class AuthService {
       });
 
       return { success: true, message: 'User updated successfully' };
-    } catch (error) {
+    } catch (error: any) {
       return { success: false, message: error.message };
     }
   }
@@ -358,7 +358,7 @@ export class AuthService {
           message: 'Email not found',
         };
       }
-    } catch (error) {
+    } catch (error: any) {
       return {
         success: false,
         message: error.message,
@@ -396,7 +396,7 @@ export class AuthService {
           message: 'Email not found',
         };
       }
-    } catch (error) {
+    } catch (error: any) {
       return {
         success: false,
         message: error.message,
@@ -436,7 +436,7 @@ export class AuthService {
           message: 'Email not found',
         };
       }
-    } catch (error) {
+    } catch (error: any) {
       return {
         success: false,
         message: error.message,
@@ -484,7 +484,7 @@ export class AuthService {
           message: 'Email not found',
         };
       }
-    } catch (error) {
+    } catch (error: any) {
       return {
         success: false,
         message: error.message,
@@ -520,7 +520,7 @@ export class AuthService {
           message: 'Email not found',
         };
       }
-    } catch (error) {
+    } catch (error: any) {
       return {
         success: false,
         message: error.message,
@@ -569,7 +569,7 @@ export class AuthService {
           message: 'Email not found',
         };
       }
-    } catch (error) {
+    } catch (error: any) {
       return {
         success: false,
         message: error.message,
@@ -608,7 +608,7 @@ export class AuthService {
           message: 'Email not found',
         };
       }
-    } catch (error) {
+    } catch (error: any) {
       return {
         success: false,
         message: error.message,
@@ -658,7 +658,7 @@ export class AuthService {
           access_token: accessToken,
         },
       };
-    } catch (error) {
+    } catch (error: any) {
       return {
         success: false,
         message: error.message,
@@ -682,7 +682,7 @@ export class AuthService {
         success: true,
         message: 'Refresh token revoked successfully',
       };
-    } catch (error) {
+    } catch (error: any) {
       return {
         success: false,
         message: error.message,
@@ -716,7 +716,7 @@ export class AuthService {
           message: 'User not found',
         };
       }
-    } catch (error) {
+    } catch (error: any) {
       return {
         success: false,
         message: error.message,
@@ -771,7 +771,7 @@ export class AuthService {
           message: 'User not found',
         };
       }
-    } catch (error) {
+    } catch (error: any) {
       return {
         success: false,
         message: error.message,
@@ -843,7 +843,7 @@ export class AuthService {
   async generate2FASecret(user_id: string) {
     try {
       return await this.userRepository.generate2FASecret(user_id);
-    } catch (error) {
+    } catch (error: any) {
       return {
         success: false,
         message: error.message,
@@ -864,7 +864,7 @@ export class AuthService {
         success: true,
         message: '2FA verified successfully',
       };
-    } catch (error) {
+    } catch (error: any) {
       return {
         success: false,
         message: error.message,
@@ -887,7 +887,7 @@ export class AuthService {
           message: 'User not found',
         };
       }
-    } catch (error) {
+    } catch (error: any) {
       return {
         success: false,
         message: error.message,
@@ -910,7 +910,7 @@ export class AuthService {
           message: 'User not found',
         };
       }
-    } catch (error) {
+    } catch (error: any) {
       return {
         success: false,
         message: error.message,
@@ -938,7 +938,7 @@ export class AuthService {
         message: 'Clients fetched successfully',
         data: clients,
       };
-    } catch (error) {
+    } catch (error: any) {
       // Production e error log kora bhalo
       console.error('Error fetching clients:', error);
       return {
@@ -967,7 +967,7 @@ export class AuthService {
         message: 'Agents fetched successfully',
         data: agents,
       };
-    } catch (error) {
+    } catch (error: any) {
       // Production e error log kora bhalo
       console.error('Error fetching agents:', error);
       return {
@@ -978,7 +978,7 @@ export class AuthService {
   }
 
   // my client by assigned_agent_id (agent)
-async myClients(user_id: string) {
+  async myClients(user_id: string) {
     try {
       // 1. Authenticate Requesting Agent Profile
       const agent = await this.userRepository.getUserDetails(user_id);
@@ -990,7 +990,8 @@ async myClients(user_id: string) {
       }
 
       // 2. Fetch specific UI bound data fields
-      const clientsData = await this.userRepository.getClientsByAgentId(user_id);
+      const clientsData =
+        await this.userRepository.getClientsByAgentId(user_id);
 
       // 3. Map values precisely matching standard state logic of UI cards
       const formattedClients = clientsData.map((client) => {
@@ -999,17 +1000,21 @@ async myClients(user_id: string) {
 
         return {
           id: client.id,
-          name: client.name || `${client.first_name || ''} ${client.last_name || ''}`.trim(),
+          name:
+            client.name ||
+            `${client.first_name || ''} ${client.last_name || ''}`.trim(),
           email: client.email,
           phone: client.phone_number || 'N/A',
           avatar: client.avatar,
           plan: client.service_plan, // BASIC, STANDARD, PREMIUM
           willStatus: latestWill ? latestWill.status : 'Not Started', // Card tag dynamic state
-          invoice: latestInvoice ? {
-            amount: latestInvoice.amount,
-            status: latestInvoice.status // PAID, UNPAID, PENDING
-          } : null,
-          nextAppointment: 'Apr 26, 2026' // Dynamic calculation pipeline placeholder
+          invoice: latestInvoice
+            ? {
+                amount: latestInvoice.amount,
+                status: latestInvoice.status, // PAID, UNPAID, PENDING
+              }
+            : null,
+          nextAppointment: 'Apr 26, 2026', // Dynamic calculation pipeline placeholder
         };
       });
 
@@ -1018,9 +1023,11 @@ async myClients(user_id: string) {
         message: 'Dashboard clients processed successfully',
         data: formattedClients,
       };
-
-    } catch (error) {
-      console.error(`[Dashboard Metrics Fetch Failure] Agent Reference ID: ${user_id}`, error);
+    } catch (error: any) {
+      console.error(
+        `[Dashboard Metrics Fetch Failure] Agent Reference ID: ${user_id}`,
+        error,
+      );
       return {
         success: false,
         message: 'Failed to synchronize component view parameters.',

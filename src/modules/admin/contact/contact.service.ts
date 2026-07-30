@@ -37,7 +37,7 @@ export class ContactService {
         success: true,
         message: 'Contact created successfully',
       };
-    } catch (error) {
+    } catch (error: any) {
       return {
         success: false,
         message: error.message,
@@ -74,7 +74,7 @@ export class ContactService {
         success: true,
         data: contacts,
       };
-    } catch (error) {
+    } catch (error: any) {
       return {
         success: false,
         message: error.message,
@@ -99,7 +99,7 @@ export class ContactService {
         success: true,
         data: contact,
       };
-    } catch (error) {
+    } catch (error: any) {
       return {
         success: false,
         message: error.message,
@@ -137,7 +137,7 @@ export class ContactService {
         success: true,
         message: 'Contact updated successfully',
       };
-    } catch (error) {
+    } catch (error: any) {
       return {
         success: false,
         message: error.message,
@@ -154,7 +154,7 @@ export class ContactService {
         success: true,
         message: 'Contact deleted successfully',
       };
-    } catch (error) {
+    } catch (error: any) {
       return {
         success: false,
         message: error.message,

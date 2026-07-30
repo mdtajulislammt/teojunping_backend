@@ -36,7 +36,7 @@ export class FaqService {
         success: true,
         message: 'Faq created successfully',
       };
-    } catch (error) {
+    } catch (error: any) {
       return {
         success: false,
         message: error.message,
@@ -61,7 +61,7 @@ export class FaqService {
         success: true,
         data: faqs,
       };
-    } catch (error) {
+    } catch (error: any) {
       return {
         success: false,
         message: error.message,
@@ -86,7 +86,7 @@ export class FaqService {
         success: true,
         data: faq,
       };
-    } catch (error) {
+    } catch (error: any) {
       return {
         success: false,
         message: error.message,
@@ -151,7 +151,7 @@ export class FaqService {
         success: true,
         message: 'Faqs updated successfully',
       };
-    } catch (error) {
+    } catch (error: any) {
       return {
         success: false,
         message: error.message,
@@ -178,7 +178,7 @@ export class FaqService {
         success: true,
         message: 'Faq updated successfully',
       };
-    } catch (error) {
+    } catch (error: any) {
       return {
         success: false,
         message: error.message,
@@ -197,7 +197,7 @@ export class FaqService {
         success: true,
         message: 'Faq deleted successfully',
       };
-    } catch (error) {
+    } catch (error: any) {
       return {
         success: false,
         message: error.message,

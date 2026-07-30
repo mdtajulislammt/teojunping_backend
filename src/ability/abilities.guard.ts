@@ -24,7 +24,9 @@ export class AbilitiesGuard implements CanActivate {
       [];
 
     const req = context.switchToHttp().getRequest();
-    const userDetails = await this.userRepository.getUserDetails(req.user.userId);
+    const userDetails = await this.userRepository.getUserDetails(
+      req.user.userId,
+    );
 
     const ability = this.abilityFacory.defineAbility(userDetails);
 
@@ -33,7 +35,7 @@ export class AbilitiesGuard implements CanActivate {
         ForbiddenError.from(ability).throwUnlessCan(rule.action, rule.subject);
       }
       return true;
-    } catch (error) {
+    } catch (error: any) {
       if (error instanceof ForbiddenError) {
         throw new ForbiddenException(error.message);
       }

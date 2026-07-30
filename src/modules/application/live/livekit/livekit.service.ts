@@ -1,9 +1,9 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { 
-  AccessToken, 
-  EgressClient, 
-  EncodedFileOutput, 
-  EncodedFileType 
+import {
+  AccessToken,
+  EgressClient,
+  EncodedFileOutput,
+  EncodedFileType,
 } from 'livekit-server-sdk';
 import { join } from 'path';
 
@@ -17,16 +17,18 @@ export class LivekitService {
 
   constructor() {
     // URL format fix: Twirp RPC requires https/http, not wss/ws
-    const httpUrl = this.rawUrl.replace('wss://', 'https://').replace('ws://', 'http://');
+    const httpUrl = this.rawUrl
+      .replace('wss://', 'https://')
+      .replace('ws://', 'http://');
 
-    this.egressClient = new EgressClient(
-      httpUrl,
-      this.apiKey,
-      this.apiSecret,
-    );
+    this.egressClient = new EgressClient(httpUrl, this.apiKey, this.apiSecret);
   }
 
-  async generateStreamToken(room_name: string, user_id: string, is_host: boolean) {
+  async generateStreamToken(
+    room_name: string,
+    user_id: string,
+    is_host: boolean,
+  ) {
     const at = new AccessToken(this.apiKey, this.apiSecret, {
       identity: user_id,
     });
@@ -34,15 +36,15 @@ export class LivekitService {
     at.addGrant({
       roomJoin: true,
       room: room_name,
-      canPublish: is_host,      // Only host can publish video/audio
-      canPublishData: true,    // Both host and guest can chat/react
-      canSubscribe: true,      // Everyone can watch
+      canPublish: is_host, // Only host can publish video/audio
+      canPublishData: true, // Both host and guest can chat/react
+      canSubscribe: true, // Everyone can watch
     });
 
     return at.toJwt();
   }
 
-   async getCallToken(room_name: string, user_id: string) {
+  async getCallToken(room_name: string, user_id: string) {
     const at = new AccessToken(this.apiKey, this.apiSecret, {
       identity: user_id,
     });
@@ -69,18 +71,20 @@ export class LivekitService {
 
       const fileOutput = new EncodedFileOutput({
         fileType: EncodedFileType.MP4,
-        filepath: filepath, 
+        filepath: filepath,
       });
 
       const info = await this.egressClient.startRoomCompositeEgress(
         room_name,
         fileOutput,
-        { layout: 'speaker' }
+        { layout: 'speaker' },
       );
 
-      this.logger.log(`Recording started for room: ${room_name}. EgressID: ${info.egressId}`);
+      this.logger.log(
+        `Recording started for room: ${room_name}. EgressID: ${info.egressId}`,
+      );
       return info.egressId;
-    } catch (error) {
+    } catch (error: any) {
       this.logger.error(`Failed to start recording: ${error.message}`);
       return null;
     }

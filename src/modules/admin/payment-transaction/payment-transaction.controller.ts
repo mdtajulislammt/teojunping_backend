@@ -33,7 +33,7 @@ export class PaymentTransactionController {
         await this.paymentTransactionService.findAll(user_id);
 
       return paymentTransactions;
-    } catch (error) {
+    } catch (error: any) {
       return {
         success: false,
         message: error.message,
@@ -53,7 +53,7 @@ export class PaymentTransactionController {
       );
 
       return paymentTransaction;
-    } catch (error) {
+    } catch (error: any) {
       return {
         success: false,
         message: error.message,
@@ -72,7 +72,7 @@ export class PaymentTransactionController {
       );
 
       return paymentTransaction;
-    } catch (error) {
+    } catch (error: any) {
       return {
         success: false,
         message: error.message,

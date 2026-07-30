@@ -35,7 +35,7 @@ export class WithdrawController {
         message: 'Connected account created successfully',
         data: result,
       };
-    } catch (error) {
+    } catch (error: any) {
       throw error;
     }
   }
@@ -51,7 +51,7 @@ export class WithdrawController {
         message: 'Onboarding link created successfully',
         data: result,
       };
-    } catch (error) {
+    } catch (error: any) {
       throw error;
     }
   }
@@ -72,7 +72,7 @@ export class WithdrawController {
       );
 
       return result;
-    } catch (error) {
+    } catch (error: any) {
       throw error;
     }
   }
@@ -85,7 +85,7 @@ export class WithdrawController {
       const userId = req.user.userId;
       const result = await this.withdrawService.checkAccountBalance(userId);
       return result;
-    } catch (error) {
+    } catch (error: any) {
       throw error;
     }
   }
@@ -99,7 +99,7 @@ export class WithdrawController {
       const result = await this.withdrawService.getWithdrawHistory(userId);
 
       return result;
-    } catch (error) {
+    } catch (error: any) {
       throw error;
     }
   }
@@ -113,7 +113,7 @@ export class WithdrawController {
       const result = await this.withdrawService.getConnectedAccountInfo(userId);
 
       return result;
-    } catch (error) {
+    } catch (error: any) {
       throw error;
     }
   }

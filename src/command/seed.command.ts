@@ -30,7 +30,7 @@ export class SeedCommand extends CommandRunner {
       setTimeout(() => {
         process.exit(0);
       }, 1000);
-    } catch (error) {
+    } catch (error: any) {
       console.error('❌ [SEED ERROR]: Exception caught inside run():', error);
       process.exit(1);
     }
@@ -53,7 +53,7 @@ export class SeedCommand extends CommandRunner {
   }
 
   private async userSeed(tx: any) {
-    const hashedPassword = await bcrypt.hash('Password@123', 10);
+    const hashedPassword = await bcrypt.hash('12345678', 10);
 
     // A. Admin User
     const admin = await tx.user.upsert({

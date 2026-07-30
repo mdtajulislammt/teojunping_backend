@@ -20,7 +20,7 @@ import {
 import { AppointmentsService } from './appoinment.service';
 import { CreateAppointmentDto } from './dto/create-appoinment.dto';
 import { UpdateAppointmentStatusDto } from './dto/update-appoinment.dto';
-import { Appointment } from 'prisma/generated/client';
+import { Appointment } from '@prisma/client';
 import { PrismaService } from '../../../prisma/prisma.service';
 import { Roles } from '../../../common/guard/role/roles.decorator';
 import { RolesGuard } from '../../../common/guard/role/roles.guard';
@@ -92,7 +92,9 @@ export class AppointmentsController {
 
   @Get('admin/list')
   @Roles(Role.ADMIN)
-  @ApiOperation({ summary: 'Admin gets platform-wide appointments with search and filters' })
+  @ApiOperation({
+    summary: 'Admin gets platform-wide appointments with search and filters',
+  })
   async getAdminAppointments(
     @Query() query: GetAdminAppointmentsQueryDto,
   ): Promise<PaginatedAppointmentListResponse> {

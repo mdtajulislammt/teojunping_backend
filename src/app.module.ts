@@ -11,7 +11,6 @@ import { LoggerMiddleware } from './common/middleware/logger.middleware';
 import appConfig from './config/app.config';
 import { AuthModule } from './modules/auth/auth.module';
 import { PrismaModule } from './prisma/prisma.module';
-import { AbilityModule } from './ability/ability.module';
 
 import { RepositoryModule } from './common/repository/repository.module';
 import { MailModule } from './mail/mail.module';
@@ -67,7 +66,6 @@ import { PrometheusModule } from './prometheus/prometheus.module';
     PrismaModule,
     RepositoryModule,
     AuthModule,
-    AbilityModule,
     MailModule,
     ApplicationModule,
     AdminModule,

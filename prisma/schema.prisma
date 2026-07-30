@@ -7,26 +7,185 @@ datasource db {
   provider = "postgresql"
 }
 
-model Account {
-  id                  String    @id @default(cuid())
-  created_at          DateTime  @default(now())
-  updated_at          DateTime  @default(now())
-  user_id             String
-  type                String?
-  provider            String?
-  provider_account_id String?
-  refresh_token       String?
-  access_token        String?
-  expires_at          DateTime?
-  token_type          String?
-  scope               String?
-  id_token            String?
-  session_state       String?
-  user                User      @relation(fields: [user_id], references: [id], onDelete: Cascade)
+// ==============================
+// ENUMS
+// ==============================
 
-  @@unique([provider, provider_account_id])
-  @@map("accounts")
+enum UserType {
+  ADMIN
+  CLIENT
+  AGENT
+  EDITOR
+  MAID
 }
+
+enum RequestStatus {
+  PENDING
+  ACCEPTED
+  COMPLETED
+  CANCELLED
+}
+
+enum UrgencyLevel {
+  LOW
+  MEDIUM
+  HIGH
+  EMERGENCY
+}
+
+enum RequestCategory {
+  HURRICANE_PREPARATION
+  DURING_STORM
+  RECOVERY_CLEANUP
+  EMERGENCY_NON_911
+}
+
+enum MessageStatus {
+  SENT
+  DELIVERED
+  READ
+  PENDING
+}
+
+enum InvoiceStatus {
+  PENDING
+  PAID
+  FAILED
+}
+
+enum RelationshipType {
+  SPOUSE_PARTNER
+  CHILD
+  SIBLING
+  PARENT
+  FRIEND
+  OTHER
+}
+
+enum MaritalStatus {
+  SINGLE
+  MARRIED
+  DIVORCED
+  WIDOWED
+  CIVIL_PARTNERSHIP
+  SEPARATED
+
+  @@map("marital_status")
+}
+
+enum BeneficiaryType {
+  PRIMARY
+  RESIDUARY
+
+  @@map("beneficiary_type")
+}
+
+enum WillStatus {
+  DRAFT
+  PENDING_REVIEW
+  COMPLETED
+  REVOKED
+
+  @@map("will_status")
+}
+
+enum ItemCategory {
+  RESIDENTIAL_PROPERTY
+  COMMERCIAL_PROPERTY
+  LAND_PLOTS
+  CASH_BANK_ACCOUNT
+  STOCKS_SHARES
+  MUTUAL_FUNDS_BONDS
+  RETIREMENT_PENSIONS
+  LIFE_INSURANCE
+  JEWELLERY_PRECIOUS_METALS
+  ART_AND_ANTIQUES
+  COLLECTIBLES
+  VEHICLES
+  ELECTRONICS_GADGETS
+  FURNITURE_HOME_APPLIANCES
+  CLOTHING_ACCESSORIES
+  DIGITAL_ASSETS
+  INTELLECTUAL_PROPERTY
+  BUSINESS_INTEREST_EQUITY
+  PETS_LIVESTOCK
+  MEMORABILIA_SENTIMENTAL
+  OTHER
+
+  @@map("item_category")
+}
+
+enum AssetType {
+  PROPERTY
+  FINANCIAL
+  VEHICLES
+  VALUABLES
+  DEBTS
+
+  @@map("asset_type")
+}
+
+enum AppointmentStatus {
+  PENDING
+  CONFIRMED
+  COMPLETED
+  CANCELLED
+
+  @@map("appointment_status")
+}
+
+enum MeetingFormat {
+  INITIAL_CONSULTATION
+  ASSET_DISCUSSION
+  WILL_WRITING
+  SIGN_OFF
+
+  @@map("meeting_format")
+}
+
+enum TypeFormat {
+  PHONE_CALL
+  ZOOM_VIDEO_CALL
+
+  @@map("type_format")
+}
+
+// ==============================
+// PLAN MODEL
+// ==============================
+
+model Plan {
+  id           String  @id @default(cuid())
+  name         String  @unique // BASIC, STANDARD, PREMIUM
+  display_name String  @map("display_name") // "Basic", "Standard", "Premium"
+  description  String? @db.Text
+  price        Decimal @db.Decimal(10, 2)
+  currency     String  @default("GBP")
+
+  // Features as JSON array
+  features Json @default("[]")
+
+  // Plan-specific limits
+  max_wills            Int?    @default(1) @map("max_wills")
+  max_revisions        Int?    @default(1) @map("max_revisions")
+  vault_storage_years  Int?    @default(1) @map("vault_storage_years")
+  has_priority_support Boolean @default(false) @map("has_priority_support")
+  has_lpa_guidance     Boolean @default(false) @map("has_lpa_guidance")
+  has_mirror_wills     Boolean @default(false) @map("has_mirror_wills")
+
+  created_at DateTime @default(now()) @map("created_at")
+  updated_at DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  users        User[] // Users on this plan
+  transactions PaymentTransaction[]
+
+  @@map("plans")
+}
+
+// ==============================
+// USER MODEL (UPDATED)
+// ==============================
 
 model User {
   id         String    @id @default(cuid())
@@ -36,7 +195,7 @@ model User {
   status     Int?      @default(1) @db.SmallInt
   name       String?   @db.VarChar(255)
 
-  // Basic Info (Common for both)
+  // Basic Info
   first_name    String?   @db.VarChar(255)
   last_name     String?   @db.VarChar(255)
   email         String?   @unique
@@ -48,11 +207,14 @@ model User {
   avatar        String?
   type          UserType  @default(CLIENT)
 
-  //client specific fields 
-  service_plan      ServicePlan? @default(BASIC)
+  // PLAN RELATION (Replaces service_plan enum)
+  plan_id String? @map("plan_id")
+  plan    Plan?   @relation(fields: [plan_id], references: [id])
+
+  // Client specific fields
   assigned_agent_id String?
 
-  //agent specific fields 
+  // Agent specific fields
   certification_body      String?      @map("certification_body")
   certification_number    String?      @map("certification_number")
   years_of_experience     String?      @map("years_of_experience")
@@ -62,7 +224,7 @@ model User {
   preferred_working_hours String?      @map("preferred_working_hours")
   max_clients_per_month   Int?         @default(20) @map("max_clients_per_month")
 
-  // Other Existing Fields
+  // Other Fields
   username              String?  @unique
   domain                String?  @unique
   balance               Decimal? @default(0.0) @db.Decimal(10, 2)
@@ -73,7 +235,8 @@ model User {
   stripe_connect_id     String? // Stripe Connected Account ID
   stripe_balance        Json? // Stripe Balance Info (JSON)
   stripe_payout_enabled Boolean? @default(false)
-  billing_id            String? // Stripe Customer ID
+  stripe_customer_id    String? // Stripe Customer ID for payments
+  billing_id            String? // Stripe Customer ID (legacy)
   billing_email         String? // Stripe Customer Email
 
   email_verified_at DateTime?
@@ -96,20 +259,50 @@ model User {
   role_users            RoleUser[]
   ucodes                Ucode[]
   user_payment_methods  UserPaymentMethod[]
-  // Named relations for fixing the ambiguous error
-  willsAsAgent          Will[]               @relation("AgentWills")
-  willsAsClient         Will[]               @relation("ClientWills")
-  assetsAsAgent         Asset[]              @relation("AgentAssets")
-  assetsAsClient        Asset[]              @relation("ClientAssets")
-  dependants            Dependant[]          @relation("AgentDependants")
-  beneficiaries         Beneficiary[]        @relation("AgentBeneficiaries")
-  executors             Executor[]           @relation("AgentExecutors")
-  exclusions            Exclusion[]          @relation("AgentExclusions")
-  AgentAppointments     Appointment[]        @relation("AgentAppointments")
-  ClientAppointments    Appointment[]        @relation("ClientAppointments")
+
+  // Will relations
+  willsAsAgent       Will[]        @relation("AgentWills")
+  willsAsClient      Will[]        @relation("ClientWills")
+  assetsAsAgent      Asset[]       @relation("AgentAssets")
+  assetsAsClient     Asset[]       @relation("ClientAssets")
+  dependants         Dependant[]   @relation("AgentDependants")
+  beneficiaries      Beneficiary[] @relation("AgentBeneficiaries")
+  executors          Executor[]    @relation("AgentExecutors")
+  exclusions         Exclusion[]   @relation("AgentExclusions")
+  AgentAppointments  Appointment[] @relation("AgentAppointments")
+  ClientAppointments Appointment[] @relation("ClientAppointments")
 
   @@map("users")
 }
+
+// ==============================
+// ACCOUNT (OAuth)
+// ==============================
+
+model Account {
+  id                  String    @id @default(cuid())
+  created_at          DateTime  @default(now())
+  updated_at          DateTime  @default(now())
+  user_id             String
+  type                String?
+  provider            String?
+  provider_account_id String?
+  refresh_token       String?
+  access_token        String?
+  expires_at          DateTime?
+  token_type          String?
+  scope               String?
+  id_token            String?
+  session_state       String?
+  user                User      @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@unique([provider, provider_account_id])
+  @@map("accounts")
+}
+
+// ==============================
+// UCODE (OTP/Verification)
+// ==============================
 
 model Ucode {
   id          String    @id @default(cuid())
@@ -125,6 +318,10 @@ model Ucode {
 
   @@map("ucodes")
 }
+
+// ==============================
+// REQUEST & FEEDBACK
+// ==============================
 
 model Request {
   id                 String          @id @default(uuid())
@@ -161,6 +358,10 @@ model Feedback {
   @@map("feedbacks")
 }
 
+// ==============================
+// CHAT
+// ==============================
+
 model Conversation {
   id           String        @id @default(cuid())
   createdAt    DateTime      @default(now())
@@ -195,6 +396,10 @@ model Message {
   sender         User          @relation("messageSender", fields: [senderId], references: [id], onDelete: Cascade)
 }
 
+// ==============================
+// NOTIFICATIONS
+// ==============================
+
 model NotificationEvent {
   id            String         @id @default(uuid())
   created_at    DateTime       @default(now())
@@ -225,6 +430,10 @@ model Notification {
   sender                User?              @relation("notificationSender", fields: [sender_id], references: [id])
 }
 
+// ==============================
+// VIDEO CALLS & LIVE STREAMS
+// ==============================
+
 model video_calls {
   id          String    @id @default(uuid())
   room_name   String    @unique
@@ -244,13 +453,17 @@ model live_streams {
   host_id       String
   title         String?
   is_active     Boolean   @default(true)
-  recording_url String? // Auto-record houar por S3 link ekhane thakbe
-  status        String    @default("streaming") // streaming, completed, failed
+  recording_url String?
+  status        String    @default("streaming")
   created_at    DateTime  @default(now())
   ended_at      DateTime?
 
   host User @relation(fields: [host_id], references: [id])
 }
+
+// ==============================
+// ROLES & PERMISSIONS
+// ==============================
 
 model Role {
   id               String           @id @default(cuid())
@@ -308,6 +521,10 @@ model RoleUser {
   @@map("role_users")
 }
 
+// ==============================
+// PAYMENT
+// ==============================
+
 model UserPaymentMethod {
   id                String    @id @default(cuid())
   created_at        DateTime  @default(now())
@@ -333,7 +550,7 @@ model PaymentTransaction {
   withdraw_via     String?   @default("wallet")
   provider         String?
   reference_number String?
-  status           String?   @default("pending")
+  status           String?   @default("pending") // pending, paid, failed, expired
   raw_status       String?
   amount           Decimal?
   currency         String?
@@ -341,8 +558,22 @@ model PaymentTransaction {
   paid_currency    String?
   user             User?     @relation(fields: [user_id], references: [id])
 
+  // Payment fields
+  plan_id            String?   @map("plan_id")
+  stripe_pi_id       String?   @map("stripe_pi_id")
+  stripe_customer_id String?   @map("stripe_customer_id")
+  paid_at            DateTime? @map("paid_at")
+  expires_at         DateTime? @map("expires_at")
+
+  // Relations
+  plan Plan? @relation(fields: [plan_id], references: [id])
+
   @@map("payment_transactions")
 }
+
+// ==============================
+// ATTACHMENTS
+// ==============================
 
 model Attachment {
   id         String            @id @default(cuid())
@@ -360,96 +591,9 @@ model Attachment {
   @@map("attachments")
 }
 
-enum UserType {
-  ADMIN
-  CLIENT
-  AGENT
-  EDITOR
-  MAID
-}
-
-enum ServicePlan {
-  BASIC
-  PREMIUM
-  ENTERPRISE
-}
-
-enum RequestStatus {
-  PENDING
-  ACCEPTED
-  COMPLETED
-  CANCELLED
-}
-
-enum UrgencyLevel {
-  LOW
-  MEDIUM
-  HIGH
-  EMERGENCY
-}
-
-enum RequestCategory {
-  HURRICANE_PREPARATION
-  DURING_STORM
-  RECOVERY_CLEANUP
-  EMERGENCY_NON_911
-}
-
-enum MessageStatus {
-  SENT
-  DELIVERED
-  READ
-  PENDING
-}
-
-enum PlanType {
-  STANDARD
-  PREMIUM
-}
-
-enum InvoiceStatus {
-  PENDING
-  PAID
-  FAILED
-}
-
-enum RelationshipType {
-  SPOUSE_PARTNER
-  CHILD
-  SIBLING
-  PARENT
-  FRIEND
-  OTHER
-}
-
-// will model ......................................
-
-enum MaritalStatus {
-  SINGLE
-  MARRIED
-  DIVORCED
-  WIDOWED
-  CIVIL_PARTNERSHIP
-  SEPARATED
-
-  @@map("marital_status")
-}
-
-enum BeneficiaryType {
-  PRIMARY
-  RESIDUARY
-
-  @@map("beneficiary_type")
-}
-
-enum WillStatus {
-  DRAFT
-  PENDING_REVIEW
-  COMPLETED
-  REVOKED
-
-  @@map("will_status")
-}
+// ==============================
+// WILL & RELATED
+// ==============================
 
 model Will {
   id        String     @id @default(cuid())
@@ -457,7 +601,6 @@ model Will {
   client_id String     @map("client_id")
   status    WillStatus @default(DRAFT)
 
-  // Step 1A: Testator Information
   testatorFullName    String        @map("testator_full_name") @db.VarChar(255)
   testatorDob         DateTime      @map("testator_dob") @db.Date
   nationalInsuranceNo String?       @map("national_insurance_no") @db.VarChar(50)
@@ -467,19 +610,15 @@ model Will {
   occupation          String?       @map("occupation") @db.VarChar(150)
   previouslyMadeWill  Boolean       @default(false) @map("previously_made_will")
 
-  // Step 1B & Step 6 Checklist Flags
   hasImmediateDependants Boolean @default(false) @map("has_immediate_dependants")
   hasChildren            Boolean @default(false) @map("has_children")
   hasExclusions          Boolean @default(false) @map("has_exclusions")
 
-  // Step 1: Agent Confirmations
   agentConfirmSoundMind Boolean @default(false) @map("agent_confirm_sound_mind")
   agentConfirmVerified  Boolean @default(false) @map("agent_confirm_verified")
 
-  // Step 3: Executor Powers
   powerToSellProperty Boolean @default(false) @map("power_to_sell_property")
 
-  // Step 6: Final Checklist Verification Timestamps
   testatorInfoCorrect  Boolean @default(false) @map("testator_info_correct")
   sharesTotalAllocated Boolean @default(false) @map("shares_total_allocated")
   executorsCorrect     Boolean @default(false) @map("executors_correct")
@@ -550,7 +689,7 @@ model Beneficiary {
 model Executor {
   id           String           @id @default(uuid())
   willId       String           @map("will_id")
-  priority     Int              @default(1) // 1 = Primary, 2 = Secondary, etc.
+  priority     Int              @default(1)
   firstName    String           @map("first_name") @db.VarChar(100)
   relationship RelationshipType
   email        String           @db.VarChar(255)
@@ -588,32 +727,6 @@ model Exclusion {
   @@map("exclusions")
 }
 
-enum ItemCategory {
-  RESIDENTIAL_PROPERTY
-  COMMERCIAL_PROPERTY
-  LAND_PLOTS
-  CASH_BANK_ACCOUNT
-  STOCKS_SHARES
-  MUTUAL_FUNDS_BONDS
-  RETIREMENT_PENSIONS
-  LIFE_INSURANCE
-  JEWELLERY_PRECIOUS_METALS
-  ART_AND_ANTIQUES
-  COLLECTIBLES
-  VEHICLES
-  ELECTRONICS_GADGETS
-  FURNITURE_HOME_APPLIANCES
-  CLOTHING_ACCESSORIES
-  DIGITAL_ASSETS
-  INTELLECTUAL_PROPERTY
-  BUSINESS_INTEREST_EQUITY
-  PETS_LIVESTOCK
-  MEMORABILIA_SENTIMENTAL
-  OTHER
-
-  @@map("item_category")
-}
-
 model SpecificBequest {
   id               String        @id @default(uuid())
   agent_id         String        @map("agent_id")
@@ -630,7 +743,6 @@ model SpecificBequest {
   created_at DateTime @default(now()) @map("created_at")
   updated_at DateTime @updatedAt @map("updated_at")
 
-  // Relations
   beneficiary Beneficiary? @relation(fields: [beneficiary_id], references: [id], onDelete: SetNull)
   will        Will?        @relation(fields: [willId], references: [id])
   willId      String?
@@ -641,15 +753,9 @@ model SpecificBequest {
   @@map("specific_bequests")
 }
 
-enum AssetType {
-  PROPERTY
-  FINANCIAL
-  VEHICLES
-  VALUABLES
-  DEBTS
-
-  @@map("asset_type")
-}
+// ==============================
+// ASSETS
+// ==============================
 
 model Asset {
   id String @id @default(uuid())
@@ -658,10 +764,9 @@ model Asset {
   client_id  String    @map("client_id")
   asset_type AssetType @map("asset_type")
 
-  // Real Estate & Property Fields
   property_address     String? @map("property_address") @db.Text
   ownership_type       String? @map("ownership_type")
-  property_type        String? @map("property_type") @db.VarChar(100) // e.g., Residential, Commercial
+  property_type        String? @map("property_type") @db.VarChar(100)
   estimated_value      Decimal @default(0.00) @map("estimated_value") @db.Decimal(12, 2)
   outstanding_mortgage Decimal @default(0.00) @map("outstanding_mortgage") @db.Decimal(12, 2)
   additional_notes     String? @map("additional_notes") @db.Text
@@ -669,7 +774,6 @@ model Asset {
   created_at DateTime @default(now()) @map("created_at")
   updated_at DateTime @updatedAt @map("updated_at")
 
-  // Relations matching your explicit system rules
   agent  User @relation("AgentAssets", fields: [agent_id], references: [id], onDelete: Cascade)
   client User @relation("ClientAssets", fields: [client_id], references: [id], onDelete: Cascade)
 
@@ -679,30 +783,9 @@ model Asset {
   @@map("assets")
 }
 
-enum AppointmentStatus {
-  PENDING
-  CONFIRMED
-  COMPLETED
-  CANCELLED
-
-  @@map("appointment_status")
-}
-
-enum MeetingFormat {
-  INITIAL_CONSULTATION
-  ASSET_DISCUSSION
-  WILL_WRITING
-  SIGN_OFF
-
-  @@map("meeting_format")
-}
-
-enum TypeFormat {
-  PHONE_CALL
-  ZOOM_VIDEO_CALL
-
-  @@map("type_format")
-}
+// ==============================
+// APPOINTMENTS
+// ==============================
 
 model Appointment {
   id              String            @id @default(uuid())
@@ -718,7 +801,6 @@ model Appointment {
   createdAt       DateTime          @default(now()) @map("created_at")
   updatedAt       DateTime          @updatedAt @map("updated_at")
 
-  // Relations (Assuming you have User/Client/Agent models configured)
   agent  User @relation("AgentAppointments", fields: [agentId], references: [id], onDelete: Cascade)
   client User @relation("ClientAppointments", fields: [clientId], references: [id], onDelete: Cascade)
 

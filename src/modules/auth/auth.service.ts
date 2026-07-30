@@ -109,7 +109,7 @@ export class AuthService {
           address: dto.address,
           password: hashedPassword,
           type: 'CLIENT',
-          service_plan: dto.service_plan || 'BASIC',
+          // service_plan: dto.service_plan || 'BASIC',
           assigned_agent_id: dto.assigned_agent_id || null,
         },
       });
@@ -1006,7 +1006,7 @@ export class AuthService {
           email: client.email,
           phone: client.phone_number || 'N/A',
           avatar: client.avatar,
-          plan: client.service_plan, // BASIC, STANDARD, PREMIUM
+          // plan: client.service_plan, // BASIC, STANDARD, PREMIUM
           willStatus: latestWill ? latestWill.status : 'Not Started', // Card tag dynamic state
           invoice: latestInvoice
             ? {

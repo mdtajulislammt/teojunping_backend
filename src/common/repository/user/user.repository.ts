@@ -1,6 +1,5 @@
 import { Injectable } from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
-import { UserType } from 'prisma/generated/client';
 import * as QRCode from 'qrcode';
 import * as speakeasy from 'speakeasy';
 import { TajulStorage } from 'src/common/lib/Disk/TajulStorage';
@@ -8,6 +7,7 @@ import appConfig from '../../../config/app.config';
 import { PrismaService } from '../../../prisma/prisma.service';
 import { Role } from '../../guard/role/role.enum';
 import { ArrayHelper } from '../../helper/array.helper';
+import { UserType } from '@prisma/client';
 
 @Injectable()
 export class UserRepository {
@@ -160,7 +160,7 @@ export class UserRepository {
         email: true,
         phone_number: true,
         avatar: true,
-        service_plan: true, // Show basic, standard, premium plan
+        // service_plan: true, // Show basic, standard, premium plan
 
         // Frontend card badges handling status
         status: true,

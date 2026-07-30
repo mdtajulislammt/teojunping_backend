@@ -1,5 +1,4 @@
 import { Module } from '@nestjs/common';
-import { ContactModule } from './contact/contact.module';
 import { NotificationModule } from './notification/notification.module';
 import { RequestModule } from 'src/modules/application/request/request.module';
 import { StreamModule } from 'src/modules/application/live/stream/stream.module';
@@ -13,7 +12,6 @@ import { AppoinmentModule } from './appoinment/appoinment.module';
 @Module({
   imports: [
     NotificationModule,
-    ContactModule,
     RequestModule,
     StreamModule,
     CallModule,

@@ -1,4 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { UserType } from '@prisma/client';
 import { Type } from 'class-transformer';
 import {
   IsDateString,
@@ -10,7 +11,6 @@ import {
   IsString,
   MinLength,
 } from 'class-validator';
-import { ServicePlan, UserType } from 'prisma/generated/client';
 
 export class CreateUserDto {
   @ApiPropertyOptional({ example: 'John Doe' })
@@ -81,10 +81,10 @@ export class RegisterClientDto {
   @IsNotEmpty()
   password: string;
 
-  @ApiProperty({ example: ServicePlan.BASIC })
-  @IsEnum(ServicePlan)
-  @IsOptional()
-  service_plan?: ServicePlan;
+  // @ApiProperty({ example: ServicePlan.BASIC })
+  // @IsEnum(ServicePlan)
+  // @IsOptional()
+  // service_plan?: ServicePlan;
 
   @ApiPropertyOptional({ example: 'agent_id' })
   @IsOptional()

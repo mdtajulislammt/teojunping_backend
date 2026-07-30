@@ -5,9 +5,9 @@ import {
   OnModuleDestroy,
 } from '@nestjs/common';
 import appConfig from '../config/app.config';
-import { PrismaClient } from 'prisma/generated/client';
 import { PrismaPg } from '@prisma/adapter-pg';
 import { Pool } from 'pg';
+import { PrismaClient } from '@prisma/client';
 
 export interface PrismaService extends PrismaClient {}
 

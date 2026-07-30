@@ -344,33 +344,6 @@ model PaymentTransaction {
   @@map("payment_transactions")
 }
 
-model Faq {
-  id         String    @id @default(cuid())
-  created_at DateTime  @default(now())
-  updated_at DateTime  @default(now())
-  deleted_at DateTime?
-  status     Int?      @default(1) @db.SmallInt
-  sort_order Int?      @default(0)
-  question   String?
-  answer     String?
-
-  @@map("faqs")
-}
-
-model Contact {
-  id           String    @id @default(cuid())
-  created_at   DateTime  @default(now())
-  updated_at   DateTime  @default(now())
-  deleted_at   DateTime?
-  first_name   String?
-  last_name    String?
-  email        String?
-  phone_number String?
-  message      String?
-
-  @@map("contacts")
-}
-
 model Attachment {
   id         String            @id @default(cuid())
   created_at DateTime          @default(now())

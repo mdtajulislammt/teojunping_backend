@@ -40,6 +40,12 @@ export class CreateUserDto {
   type?: UserType;
 }
 
+export enum RegisterPlan {
+  BASIC = 'BASIC',
+  STANDARD = 'STANDARD',
+  PREMIUM = 'PREMIUM',
+}
+
 export class RegisterClientDto {
   @ApiProperty({ example: 'John' })
   @IsString()
@@ -81,15 +87,21 @@ export class RegisterClientDto {
   @IsNotEmpty()
   password: string;
 
-  // @ApiProperty({ example: ServicePlan.BASIC })
-  // @IsEnum(ServicePlan)
-  // @IsOptional()
-  // service_plan?: ServicePlan;
+  @ApiProperty({
+    enum: RegisterPlan,
+    example: RegisterPlan.BASIC,
+    description:
+      'Select a plan: BASIC (£149), STANDARD (£249), or PREMIUM (£399)',
+  })
+  @IsEnum(RegisterPlan)
+  @IsNotEmpty()
+  plan: RegisterPlan;
 
   @ApiPropertyOptional({ example: 'agent_id' })
   @IsOptional()
   assigned_agent_id?: string;
 }
+
 
 export class RegisterAgentDto {
   @ApiProperty({ example: 'John' })

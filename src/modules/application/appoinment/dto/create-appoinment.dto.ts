@@ -1,6 +1,6 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { IsEnum, IsInt, IsNotEmpty, IsOptional, IsString, Min } from 'class-validator';
-import { MeetingFormat, TypeFormat } from 'prisma/generated/client';
+import { MeetingFormat, TypeFormat } from '@prisma/client';
 
 export class CreateAppointmentDto {
 

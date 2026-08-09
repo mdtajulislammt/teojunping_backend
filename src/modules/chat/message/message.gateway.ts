@@ -31,10 +31,11 @@ enum MessageStatus {
 })
 export class MessageGateway
   implements
-  OnGatewayInit,
-  OnGatewayConnection,
-  OnGatewayDisconnect,
-  OnModuleInit {
+    OnGatewayInit,
+    OnGatewayConnection,
+    OnGatewayDisconnect,
+    OnModuleInit
+{
   @WebSocketServer()
   server: Server;
 
@@ -51,11 +52,10 @@ export class MessageGateway
     }
   }
 
- 
-  public clients = new Map<string, string>(); 
-  private activeUsers = new Map<string, string>(); 
+  public clients = new Map<string, string>();
+  private activeUsers = new Map<string, string>();
 
-  onModuleInit() { }
+  onModuleInit() {}
 
   afterInit(server: Server) {
     console.log('Websocket server started');
@@ -91,19 +91,16 @@ export class MessageGateway
 
       console.log(`User ${userId} connected`);
 
-    } catch (error) {
+    } catch (error: any) {
       client.disconnect();
       console.error('Error handling connection:', error);
     }
   }*/
 
   async handleConnection(client: Socket, ...args: any[]) {
-  
-
     try {
-   
       const authHeader = client.handshake.headers.authorization;
-      
+
       if (!authHeader) {
         client.disconnect();
         return;
@@ -112,41 +109,42 @@ export class MessageGateway
       const token = authHeader.split(' ')[1];
 
       if (!token) {
-        console.error('[DEBUG] Token not found after split. Disconnecting client.');
+        console.error(
+          '[DEBUG] Token not found after split. Disconnecting client.',
+        );
         client.disconnect();
         return;
       }
 
       console.log('[DEBUG] Token extracted successfully. Verifying...');
 
-     
       const decoded: any = jwt.verify(token, appConfig().jwt.secret);
 
-      console.log('[DEBUG] JWT verification successful. Decoded payload:', decoded);
+      console.log(
+        '[DEBUG] JWT verification successful. Decoded payload:',
+        decoded,
+      );
 
-     
       const { sub: userId } = decoded;
 
-      
       if (!userId) {
-        console.error('[DEBUG] Payload missing `sub` (userId). Disconnecting client.');
+        console.error(
+          '[DEBUG] Payload missing `sub` (userId). Disconnecting client.',
+        );
         client.disconnect();
         return;
       }
 
-      
       this.clients.set(userId, client.id);
 
       client.join(`user_${userId}`);
 
-      console.log(`User joined room: user_${userId}`);   
-
-    } catch (error) {
-      
-      console.error('Error handling connection:', error.message); 
+      console.log(`User joined room: user_${userId}`);
+    } catch (error: any) {
+      console.error('Error handling connection:', error.message);
       client.disconnect();
     }
-  }  
+  }
 
   async handleDisconnect(client: Socket) {
     const userId = [...this.clients.entries()].find(
@@ -173,16 +171,13 @@ export class MessageGateway
     }
   }
 
-
-
   @SubscribeMessage('joinroom')
   handleRoomJoin(client: Socket, body: { room_id: string }) {
     const room_id = body.room_id;
-    console.log('room connected', room_id); 
-    client.join(room_id); 
+    console.log('room connected', room_id);
+    client.join(room_id);
     client.emit('joinedRoom', { room_id: room_id });
   }
-
 
   @SubscribeMessage('sendMessage')
   async listenForMessages(
@@ -337,9 +332,6 @@ export class MessageGateway
   }
 }
 
-
-
-
 /*
 
 
@@ -358,4 +350,3 @@ export class MessageGateway
 
 
 */
-

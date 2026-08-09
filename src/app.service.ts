@@ -22,7 +22,7 @@ export class AppService {
         data: result,
         url: TajulStorage.url('tony1.jpg'),
       };
-    } catch (error) {
+    } catch (error: any) {
       throw new Error(`Failed to upload image: ${error}`);
     }
   }

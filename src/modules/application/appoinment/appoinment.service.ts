@@ -6,11 +6,7 @@ import {
 import { PrismaService } from 'src/prisma/prisma.service';
 import { CreateAppointmentDto } from './dto/create-appoinment.dto';
 import { UpdateAppointmentStatusDto } from './dto/update-appoinment.dto';
-import {
-  Appointment,
-  AppointmentStatus,
-  Prisma,
-} from 'prisma/generated/client';
+import { Appointment, AppointmentStatus, Prisma } from '@prisma/client';
 import {
   CreateAppointmentResponse,
   DashboardMetricsResponse,

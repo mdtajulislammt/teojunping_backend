@@ -207,7 +207,6 @@ export class UcodeRepository {
    * @returns boolean - true if verified, false otherwise
    */
   async verifycheckToken({ email, token }: { email: string; token: string }) {
-    
     const existToken = await this.prisma.ucode.findFirst({
       where: {
         token: token,
@@ -253,7 +252,7 @@ export class UcodeRepository {
       });
 
       return ucode;
-    } catch (error) {
+    } catch (error: any) {
       return null;
     }
   }

@@ -71,7 +71,7 @@ export class NotificationService {
         message: 'Notifications fetched successfully',
         data: notifications,
       };
-    } catch (error) {
+    } catch (error: any) {
       return {
         success: false,
         data: [],
@@ -136,7 +136,7 @@ export class NotificationService {
         success: true,
         message: 'Notification deleted successfully',
       };
-    } catch (error) {
+    } catch (error: any) {
       return {
         success: false,
         message: error.message,
@@ -170,7 +170,7 @@ export class NotificationService {
         success: true,
         message: 'All notifications deleted successfully',
       };
-    } catch (error) {
+    } catch (error: any) {
       return {
         success: false,
         message: error.message,

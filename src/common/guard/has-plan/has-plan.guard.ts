@@ -30,7 +30,7 @@ export class HasPlanGuard implements CanActivate {
       //   return true;
       // }
       return true;
-    } catch (error) {
+    } catch (error: any) {
       throw new ForbiddenException(error.message);
     }
   }

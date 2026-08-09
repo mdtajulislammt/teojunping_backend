@@ -9,7 +9,7 @@ import {
   IsDateString,
 } from 'class-validator';
 import { Type } from 'class-transformer';
-import { AppointmentStatus } from 'prisma/generated/client';
+import { AppointmentStatus } from '@prisma/client';
 import { ApiProperty } from '@nestjs/swagger';
 
 export class GetAppointmentsQueryDto {

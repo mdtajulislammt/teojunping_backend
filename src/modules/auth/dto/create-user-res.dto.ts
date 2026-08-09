@@ -6,7 +6,7 @@ import {
   IsString,
   MinLength,
 } from 'class-validator';
-import { UserType } from 'prisma/generated/client';
+import { UserType } from '@prisma/client';
 
 export class CreateUserResDto {
   @ApiPropertyOptional({ example: 'John Doe' })
@@ -37,11 +37,11 @@ export class CreateUserResDto {
 }
 
 export class LoginUserResDto {
-  @ApiProperty({ example: 'user@gmail.com' })
+  @ApiProperty({ example: 'client@gmail.com' })
   @IsEmail()
   email: string;
 
-  @ApiProperty({ example: 'Password@123' })
+  @ApiProperty({ example: '12345678' })
   @MinLength(8, { message: 'Password should be minimum 8 characters' })
   password: string;
 

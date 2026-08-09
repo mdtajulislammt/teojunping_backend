@@ -1,8 +1,8 @@
 // src/modules/application/specificbequests/dto/create-specificbequest.dto.ts
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { ItemCategory } from '@prisma/client';
 import { Transform } from 'class-transformer';
 import { IsString, IsEnum, IsOptional, IsNumber, IsNotEmpty, Min } from 'class-validator';
-import { ItemCategory } from 'prisma/generated/client';
 
 export class CreateSpecificbequestDto {
 

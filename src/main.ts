@@ -21,10 +21,10 @@ async function bootstrap() {
   app.useWebSocketAdapter(new IoAdapter(app));
   app.setGlobalPrefix('api');
   app.enableCors({
-    origin: true, // Dynamically allows active development and production origins
+    origin: true,
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
     credentials: true,
-    allowedHeaders: 'Content-Type, Accept, Authorization',
+    allowedHeaders: '*',
   });
   app.use(
     helmet({

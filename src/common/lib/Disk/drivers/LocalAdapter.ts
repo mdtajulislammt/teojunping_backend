@@ -37,7 +37,7 @@ export class LocalAdapter implements IStorage {
       } else {
         return false;
       }
-    } catch (error) {
+    } catch (error: any) {
       console.log(error);
       return false;
     }

@@ -70,7 +70,7 @@ export class AppController {
     try {
       const result = await this.appService.test(image);
       return result;
-    } catch (error) {
+    } catch (error: any) {
       return {
         success: false,
         message: error.message,

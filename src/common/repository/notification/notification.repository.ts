@@ -8,7 +8,7 @@ import { PrismaService } from 'src/prisma/prisma.service';
 
 @Injectable()
 export class NotificationRepository implements OnModuleInit {
-  constructor(private readonly prisma: PrismaService) { }
+  constructor(private readonly prisma: PrismaService) {}
 
   onModuleInit() {
     if (!admin.apps.length) {
@@ -91,7 +91,7 @@ export class NotificationRepository implements OnModuleInit {
       this.sendFCM(receiver_id, type, text, entity_id);
 
       return notification;
-    } catch (error) {
+    } catch (error: any) {
       console.error('❌ Database/Logic Error:', error);
       throw new InternalServerErrorException('Failed to process notification');
     }

@@ -1,5 +1,5 @@
 // interfaces/appointment-response.interface.ts
-import { Appointment, AppointmentStatus } from 'prisma/generated/client';
+import { Appointment, AppointmentStatus } from '@prisma/client';
 
 export interface CreateAppointmentResponse {
   success: boolean;

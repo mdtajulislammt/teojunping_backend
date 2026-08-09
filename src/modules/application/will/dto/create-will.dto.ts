@@ -14,11 +14,7 @@ import {
   Max,
 } from 'class-validator';
 import { Type } from 'class-transformer';
-import {
-  MaritalStatus,
-  RelationshipType,
-  BeneficiaryType,
-} from 'prisma/generated/client';
+import { BeneficiaryType, MaritalStatus, RelationshipType } from '@prisma/client';
 
 export class CreateDependantDto {
   @ApiProperty({ example: 'Liam Johnson' })

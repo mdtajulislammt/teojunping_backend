@@ -1,6 +1,10 @@
 // external imports
 import { InjectRedis } from '@nestjs-modules/ioredis';
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import Redis from 'ioredis';
 
@@ -22,6 +26,7 @@ import appConfig from '../../config/app.config';
 import { MailService } from '../../mail/mail.service';
 import { PrismaService } from '../../prisma/prisma.service';
 import { UpdateUserDto } from './dto/update-user.dto';
+import { PaymentTransactionService } from '../admin/payment-transaction/payment-transaction.service';
 
 @Injectable()
 export class AuthService {
@@ -34,23 +39,52 @@ export class AuthService {
     private userRepository: UserRepository,
     private ucodeRepository: UcodeRepository,
     @InjectRedis() private readonly redis: Redis,
+    private paymentTransactionService: PaymentTransactionService,
   ) {}
 
-  //
+  // src/modules/auth/auth.service.ts
+
   async me(userId: string) {
     try {
       const user = await this.prisma.user.findFirst({
         where: {
           id: userId,
+          deleted_at: null,
         },
         select: {
           id: true,
+          first_name: true,
+          last_name: true,
           name: true,
-          phone_number: true,
           email: true,
+          phone_number: true,
           avatar: true,
           address: true,
           type: true,
+          status: true,
+          created_at: true,
+          email_verified_at: true,
+          is_two_factor_enabled: true,
+          professional_bio: true,
+          specialisation: true,
+          years_of_experience: true,
+          certification_body: true,
+          certification_number: true,
+          plan_id: true,
+          assigned_agent_id: true,
+          preferred_working_hours: true,
+          max_clients_per_month: true,
+          plan: {
+            select: {
+              id: true,
+              name: true,
+              display_name: true,
+              description: true,
+              price: true,
+              currency: true,
+              features: true,
+            },
+          },
         },
       });
 
@@ -61,23 +95,132 @@ export class AuthService {
         };
       }
 
+      // Build avatar URL
+      let avatarUrl = null;
       if (user.avatar) {
-        user['avatar_url'] = TajulStorage.url(
+        avatarUrl = TajulStorage.url(
           appConfig().storageUrl.avatar + '/' + user.avatar,
         );
       }
 
-      if (user) {
-        return {
-          success: true,
-          data: user,
-        };
-      } else {
-        return {
-          success: false,
-          message: 'User not found',
-        };
+      // Get stats based on user type
+      let clientsCount = 0;
+      let willsCount = 0;
+      let invoicesCount = 0;
+
+      if (user.type === 'AGENT') {
+        // Clients assigned to this agent
+        clientsCount = await this.prisma.user.count({
+          where: {
+            assigned_agent_id: user.id,
+            deleted_at: null,
+          },
+        });
+
+        // Wills created by this agent
+        willsCount = await this.prisma.will.count({
+          where: {
+            agent_id: user.id,
+          },
+        });
+
+        // Invoices for agent's clients
+        invoicesCount = await this.prisma.paymentTransaction.count({
+          where: {
+            user: {
+              assigned_agent_id: user.id,
+            },
+          },
+        });
+      } else if (user.type === 'CLIENT') {
+        // Wills for this client
+        willsCount = await this.prisma.will.count({
+          where: {
+            client_id: user.id,
+          },
+        });
+
+        // Invoices for this client
+        invoicesCount = await this.prisma.paymentTransaction.count({
+          where: {
+            user_id: user.id,
+          },
+        });
       }
+
+      // Return formatted response matching Figma
+      return {
+        success: true,
+        data: {
+          // Personal Info
+          id: user.id,
+          first_name: user.first_name,
+          last_name: user.last_name,
+          full_name: `${user.first_name || ''} ${user.last_name || ''}`.trim(),
+          email: user.email,
+          phone_number: user.phone_number,
+          avatar: avatarUrl,
+          type: user.type,
+          role_title:
+            user.type === 'AGENT' ? user.specialisation || 'Agent' : 'Client',
+          location: user.address || 'Not specified',
+          bio: user.professional_bio || '',
+
+          // Account Status
+          account_status: {
+            is_active: user.status === 1,
+            is_email_verified: !!user.email_verified_at,
+            is_two_factor_enabled: user.is_two_factor_enabled === 1,
+            member_since: user.created_at,
+          },
+
+          // Plan Info
+          plan: user.plan
+            ? {
+                id: user.plan.id,
+                name: user.plan.name,
+                display_name: user.plan.display_name,
+                description: user.plan.description,
+                price: user.plan.price,
+                currency: user.plan.currency,
+                features: user.plan.features,
+              }
+            : null,
+
+          // Stats (Figma: 24 CLIENTS, 18 WILLS, 31 INVOICES)
+          stats: {
+            clients: clientsCount,
+            wills: willsCount,
+            invoices: invoicesCount,
+          },
+
+          // Agent specific fields
+          agent_details:
+            user.type === 'AGENT'
+              ? {
+                  specialisation: user.specialisation,
+                  years_of_experience: user.years_of_experience,
+                  certification_body: user.certification_body,
+                  certification_number: user.certification_number,
+                  professional_bio: user.professional_bio,
+                  preferred_working_hours: user.preferred_working_hours,
+                  max_clients_per_month: user.max_clients_per_month,
+                }
+              : null,
+
+          // Client specific fields
+          client_details:
+            user.type === 'CLIENT'
+              ? {
+                  assigned_agent_id: user.assigned_agent_id,
+                }
+              : null,
+
+          // Timestamps
+          created_at: user.created_at,
+          email_verified_at: user.email_verified_at,
+        },
+      };
     } catch (error: any) {
       return {
         success: false,
@@ -94,10 +237,19 @@ export class AuthService {
     await this.validateUniqueEmail(dto.email);
 
     try {
-      // 2. Hash Password
+      // 2. Get the plan by name
+      const plan = await this.prisma.plan.findUnique({
+        where: { name: dto.plan },
+      });
+
+      if (!plan) {
+        throw new NotFoundException(`Plan ${dto.plan} not found`);
+      }
+
+      // 3. Hash Password
       const hashedPassword = await bcrypt.hash(dto.password, this.saltRounds);
 
-      // 3. Persist to Database
+      // 4. Persist to Database with plan
       const client = await this.prisma.user.create({
         data: {
           first_name: dto.first_name,
@@ -109,21 +261,67 @@ export class AuthService {
           address: dto.address,
           password: hashedPassword,
           type: 'CLIENT',
-          // service_plan: dto.service_plan || 'BASIC',
+          plan_id: plan.id,
           assigned_agent_id: dto.assigned_agent_id || null,
+          status: 1,
         },
       });
 
-      // Secure payload cleanup
+      // 5. Create invoice internally (no need to return)
+      try {
+        await this.paymentTransactionService.createInvoice(client.id, dto.plan);
+      } catch (invoiceError) {
+        // Log error but don't fail registration
+        console.error('Invoice creation failed:', invoiceError);
+        // Continue - client can still login and see pending payment
+      }
+
+      // 6. Secure payload cleanup
       delete client.password;
 
+      // 7. Return only user data
       return {
         success: true,
-        message: 'Client account created successfully',
-        data: client,
+        message:
+          'Client account created successfully. An invoice has been generated for payment.',
+        data: {
+          id: client.id,
+          first_name: client.first_name,
+          last_name: client.last_name,
+          email: client.email,
+          phone_number: client.phone_number,
+          type: client.type,
+          plan: {
+            name: plan.name,
+            display_name: plan.display_name,
+          },
+          status: client.status,
+          created_at: client.created_at,
+        },
       };
     } catch (error: any) {
-      throw new InternalServerErrorException('Failed to create client account');
+      // Handle specific errors
+      if (error.code === 'P2002') {
+        throw new ConflictException('Email already exists');
+      }
+
+      throw new InternalServerErrorException(
+        error.message || 'Failed to create client account',
+      );
+    }
+  }
+
+  /**
+   * Validate unique email
+   */
+  private async validateUniqueEmail(email: string): Promise<void> {
+    const userExists = await this.prisma.user.findUnique({
+      where: { email },
+      select: { id: true },
+    });
+
+    if (userExists) {
+      throw new ConflictException('Email address already exists');
     }
   }
 
@@ -191,20 +389,6 @@ export class AuthService {
       throw new InternalServerErrorException(
         'Failed to register agent account',
       );
-    }
-  }
-
-  /**
-   * Helper method to validate global unique email constraints
-   */
-  private async validateUniqueEmail(email: string): Promise<void> {
-    const userExists = await this.prisma.user.findUnique({
-      where: { email },
-      select: { id: true },
-    });
-
-    if (userExists) {
-      throw new ConflictException('Email address already exists');
     }
   }
 

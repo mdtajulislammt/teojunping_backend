@@ -14,8 +14,6 @@ const Stripe = new stripe(STRIPE_SECRET_KEY, {
 const STRIPE_WEBHOOK_SECRET = appConfig().payment.stripe.webhook_secret;
 
 export class StripePayment {
-
-
   /*-----------------------------------------
             important Schema start
   -----------------------------------------*/
@@ -81,13 +79,9 @@ export class StripePayment {
     return customer;
   }
 
-
-
-
   /*-----------------------------------------
             important Schema end
   -----------------------------------------*/
-
 
   /*-----------------------------------------
          withdraw Schema start
@@ -134,7 +128,6 @@ export class StripePayment {
     return accountLink;
   }
 
-
   // transfer money to account
   static async createTransfer(
     account_id: string,
@@ -149,15 +142,9 @@ export class StripePayment {
     return transfer;
   }
 
-
   /*-----------------------------------------
          withdraw Schema end
   -----------------------------------------*/
-
-
-
-
-
 
   static async attachCustomerPaymentMethodId({
     customer_id,
@@ -226,8 +213,6 @@ export class StripePayment {
     return session;
   }
 
-
-
   /**
    * Create stripe hosted checkout session
    * @param customer
@@ -235,8 +220,9 @@ export class StripePayment {
    * @returns
    */
   static async createCheckoutSession() {
-    const success_url = `${appConfig().app.url
-      }/success?session_id={CHECKOUT_SESSION_ID}`;
+    const success_url = `${
+      appConfig().app.url
+    }/success?session_id={CHECKOUT_SESSION_ID}`;
     const cancel_url = `${appConfig().app.url}/failed`;
 
     const session = await Stripe.checkout.sessions.create({
@@ -272,8 +258,9 @@ export class StripePayment {
     customer: string,
     price: string,
   ) {
-    const success_url = `${appConfig().app.url
-      }/success?session_id={CHECKOUT_SESSION_ID}`;
+    const success_url = `${
+      appConfig().app.url
+    }/success?session_id={CHECKOUT_SESSION_ID}`;
     const cancel_url = `${appConfig().app.url}/failed`;
 
     const session = await Stripe.checkout.sessions.create({
@@ -373,10 +360,6 @@ export class StripePayment {
 
   // If you are paying users, they need Stripe Connect accounts. You can create Express or Standard accounts.
 
-
-
-
-
   // Once the user has an approved Stripe account with a linked bank, you can send them funds.
   static async createPayout(
     account_id: string,
@@ -457,6 +440,7 @@ export class StripePayment {
         },
       },
     });
+
     // return await Stripe.checkout.sessions.create({
     //   mode: 'payment',
     //   customer: customerId,
@@ -483,6 +467,24 @@ export class StripePayment {
     // });
   }
   // end ACH
+
+  /**
+   * Cancel a payment intent
+   */
+  static async cancelPaymentIntent(
+    paymentIntentId: string,
+  ): Promise<stripe.PaymentIntent> {
+    return Stripe.paymentIntents.cancel(paymentIntentId); // ← Fixed!
+  }
+
+  /**
+   * Get payment intent by ID
+   */
+  static async getPaymentIntent(
+    paymentIntentId: string,
+  ): Promise<stripe.PaymentIntent> {
+    return Stripe.paymentIntents.retrieve(paymentIntentId);
+  }
 
   static handleWebhook(rawBody: string, sig: string | string[]): stripe.Event {
     const event = Stripe.webhooks.constructEvent(

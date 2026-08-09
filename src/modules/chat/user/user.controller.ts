@@ -12,7 +12,7 @@ export class UserController {
     try {
       const users = await this.userService.findAll();
       return users;
-    } catch (error) {
+    } catch (error: any) {
       return {
         success: false,
         message: error.message,

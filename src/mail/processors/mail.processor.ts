@@ -59,7 +59,7 @@ export class MailProcessor extends WorkerHost {
           this.logger.log('Unknown job name');
           return;
       }
-    } catch (error) {
+    } catch (error: any) {
       this.logger.error(
         `Error processing job ${job.id} with name ${job.name}`,
         error,

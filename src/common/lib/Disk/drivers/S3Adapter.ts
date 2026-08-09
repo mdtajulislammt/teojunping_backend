@@ -55,7 +55,7 @@ export class S3Adapter implements IStorage {
       const params = { Bucket: this._config.connection.awsBucket, Key: key };
       await this.s3.headObject(params).promise();
       return true;
-    } catch (error) {
+    } catch (error: any) {
       if ((error as AWS.AWSError).code === 'NotFound') {
         return false;
       }
@@ -72,7 +72,7 @@ export class S3Adapter implements IStorage {
       const params = { Bucket: this._config.connection.awsBucket, Key: key };
       const data = this.s3.getObject(params).createReadStream();
       return data;
-    } catch (error) {
+    } catch (error: any) {
       throw new Error(`Failed to get object ${key}: ${error}`);
     }
   }
@@ -94,7 +94,7 @@ export class S3Adapter implements IStorage {
       };
       const upload = await this.s3.upload(params).promise();
       return upload;
-    } catch (error) {
+    } catch (error: any) {
       throw error;
     }
   }
@@ -108,7 +108,7 @@ export class S3Adapter implements IStorage {
       const params = { Bucket: this._config.connection.awsBucket, Key: key };
       await this.s3.deleteObject(params).promise();
       return true;
-    } catch (error) {
+    } catch (error: any) {
       if ((error as AWS.AWSError).code === 'NotFound') {
         return false;
       }

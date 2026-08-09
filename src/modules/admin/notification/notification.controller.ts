@@ -43,12 +43,12 @@ export class NotificationController {
   })
   @Get()
   async findAll(@Req() req: Request) {
-const user_id = req.user.userId;
+    const user_id = req.user.userId;
     try {
       const notification = await this.notificationService.findAll(user_id);
 
       return notification;
-    } catch (error) {
+    } catch (error: any) {
       return {
         success: false,
         message: error.message,
@@ -77,7 +77,7 @@ const user_id = req.user.userId;
       const notification = await this.notificationService.remove(id, user_id);
 
       return notification;
-    } catch (error) {
+    } catch (error: any) {
       return {
         success: false,
         message: error.message,
@@ -93,7 +93,7 @@ const user_id = req.user.userId;
       const notification = await this.notificationService.removeAll(user_id);
 
       return notification;
-    } catch (error) {
+    } catch (error: any) {
       return {
         success: false,
         message: error.message,

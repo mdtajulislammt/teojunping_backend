@@ -28,7 +28,7 @@ export class MailService {
           url: url,
         },
       });
-    } catch (error) {
+    } catch (error: any) {
       console.log(error);
     }
   }
@@ -50,7 +50,7 @@ export class MailService {
           otp: otp,
         },
       });
-    } catch (error) {
+    } catch (error: any) {
       console.log(error);
     }
   }
@@ -74,7 +74,7 @@ export class MailService {
           verificationLink,
         },
       });
-    } catch (error) {
+    } catch (error: any) {
       console.log(error);
     }
   }

@@ -1,6 +1,6 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { IsEnum, IsNotEmpty, IsOptional, IsString, IsUrl } from 'class-validator';
-import { AppointmentStatus } from 'prisma/generated/client';
+import { AppointmentStatus } from '@prisma/client';
 
 export class UpdateAppointmentStatusDto {
   @ApiProperty({ enum: AppointmentStatus, example: AppointmentStatus.CONFIRMED })
